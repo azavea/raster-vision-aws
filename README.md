@@ -35,17 +35,11 @@ Copy the `settings.mk.template` file to `settings.mk`, and fill out the followin
 | `AWS_BATCH_BASE_AMI`         | The AMI of the Deep Learning Base AMI (Amazon Linux) to use.                 |
 |------------------------------|------------------------------------------------------------------------------|
 | `AWS_ROOT_BLOCK_DEVICE_SIZE` | The size of the volume, in GiB, of the root device for the AMI.              |
-|------------------------------|------------------------------------------------------------------------------|
 | `AMI_ID`                     | The AMI ID that comes from the `make create-ami` step                        |
-|------------------------------|------------------------------------------------------------------------------|
 | `KEY_PAIR_NAME`              | The key pair name for the batch EC2 instances                                |
-|------------------------------|------------------------------------------------------------------------------|
 | `AWS_REGION`                 | The AWS region to use.                                                       |
-|------------------------------|------------------------------------------------------------------------------|
 | `RASTER_VISION_IMAGE`        | The raster vision image to use. e.g. quay.io/azavea/raster-vision:gpu-latest |
-|------------------------------|------------------------------------------------------------------------------|
 | `ECR_IMAGE`                  | The name for the ECR image                                                   |
-|------------------------------|------------------------------------------------------------------------------|
 | `ECR_IMAGE_TAG`              | The ECR image tag to use, that is the tag in ECR_IMAGE                       |
 
 To find the latest Deep Learning Base AMI, search in th AMI section of your EC2 AWS console for
