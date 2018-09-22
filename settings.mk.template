@@ -1,0 +1,14 @@
+# Settings for create-ami
+AWS_BATCH_BASE_AMI := ami-XXXXXXXX
+AWS_ROOT_BLOCK_DEVICE_SIZE := 50
+
+# Settings for create-batch
+#  AMI_ID is derived from the packer step.
+AMI_ID := ami-XXXXXXX
+KEY_PAIR_NAME := some-aws-key
+AWS_REGION := us-east-1
+
+# Settings for ECR
+RASTER_VISION_IMAGE := raster-vision-gpu
+ECR_IMAGE := rastervision
+ECR_IMAGE_TAG := latest

@@ -1,0 +1,11 @@
+# Settings
+settings.mk
+
+# Terraform
+.terraform
+*.tfplan
+*.tfvars
+*.tfstate
+*.tfstate.backup
+.tmp
+*.zip

@@ -1,0 +1,24 @@
+{
+    "image": "${image_name}",
+    "vcpus": ${vcpus},
+    "memory": ${memory},
+    "command": [ ],
+    "volumes": [
+        {
+            "host": {
+                "sourcePath": "/home/ec2-user"
+            },
+            "name": "home"
+        }
+    ],
+    "mountPoints": [
+        {
+            "containerPath": "/opt/data",
+            "readOnly": false,
+            "sourceVolume": "home"
+        }
+    ],
+    "readonlyRootFilesystem": false,
+    "privileged": true,
+    "ulimits": []
+}

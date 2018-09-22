@@ -1,0 +1,28 @@
+{
+    "variables": {
+        "aws_batch_base_ami": "{{env `AWS_BATCH_BASE_AMI`}}"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "region": "us-east-1",
+            "source_ami": "{{user `aws_batch_base_ami`}}",
+            "instance_type": "c3.large",
+            "ssh_username": "ec2-user",
+            "ami_name": "amzn-batch-ami-{{timestamp}}-amazon-ecs-optimized",
+            "ami_block_device_mappings": [
+                {
+                    "device_name": "/dev/sdb",
+                    "virtual_name": "ephemeral0"
+                }
+            ],
+            "associate_public_ip_address": true
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "script": "./packer/scripts/reset-ecs-state.sh"
+        }
+    ]
+}
