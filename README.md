@@ -41,7 +41,7 @@ Copy the `settings.mk.template` file to `settings.mk`, and fill out the followin
 | `AWS_BATCH_BASE_AMI`         | The AMI of the Deep Learning Base AMI (Amazon Linux) to use.                 |
 |------------------------------|------------------------------------------------------------------------------|
 | `AWS_ROOT_BLOCK_DEVICE_SIZE` | The size of the volume, in GiB, of the root device for the AMI.              |
-| `AMI_ID`                     | The AMI ID that comes from the `make create-ami` step                        |
+| `AMI_ID`                     | The AMI ID that comes from the `make create-image` step                        |
 | `KEY_PAIR_NAME`              | The key pair name for the batch EC2 instances                                |
 | `AWS_REGION`                 | The AWS region to use.                                                       |
 | `RASTER_VISION_IMAGE`        | The raster vision image to use. e.g. quay.io/azavea/raster-vision:gpu-latest |
@@ -58,7 +58,7 @@ environment variable setting.
 
 Then run:
 ```shell
-> make create-ami
+> make create-image
 ```
 
 This will run packer, which will spin up an EC2 instance, install the necessary resources, create an AMI
@@ -66,7 +66,7 @@ off of the instance, and shut the instance down.
 
 ### Record the AMI ID ###
 
-Be sure to record the AMI ID, which will be given in the last line of the output for `make create-ami`
+Be sure to record the AMI ID, which will be given in the last line of the output for `make create-image`
 on a successful run. Put this in the `settings.mk` as `AMI_ID`.
 
 ## AWS Batch ##
