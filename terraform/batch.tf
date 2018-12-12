@@ -1,10 +1,6 @@
 #
 # Batch resources
 #
-data "aws_iam_instance_profile" "batch_instance_role" {
-  name = "${aws_iam_role.container_instance_ec2.name}"
-}
-
 resource "aws_batch_compute_environment" "rastervision" {
   depends_on = ["aws_iam_role_policy_attachment.batch_policy"]
 
@@ -24,7 +20,7 @@ resource "aws_batch_compute_environment" "rastervision" {
     max_vcpus     = "${var.batch_max_vcpus}"
 
     spot_iam_fleet_role = "${aws_iam_role.container_instance_spot_fleet.arn}"
-    instance_role = "${data.aws_iam_instance_profile.batch_instance_role.arn}"
+    instance_role       = "${aws_iam_role.container_instance_ec2.arn}"
 
     instance_type = [
       "${var.batch_instance_types}",
@@ -34,7 +30,7 @@ resource "aws_batch_compute_environment" "rastervision" {
       "${aws_security_group.container_instance.id}",
     ]
 
-    subnets = ["${aws_subnet.public.*.id}"]
+    subnets = "${var.subnet_ids}"
 
     tags {
       Name               = "Raster Vision BatchWorker"
