@@ -3,6 +3,10 @@
 #
 data "aws_iam_instance_profile" "batch_instance_role" {
   name = "${aws_iam_role.container_instance_ec2.name}"
+
+  depends_on = [
+    "aws_iam_role.container_instance_ec2"
+  ]
 }
 
 resource "aws_batch_compute_environment" "rastervision" {
@@ -34,7 +38,7 @@ resource "aws_batch_compute_environment" "rastervision" {
       "${aws_security_group.container_instance.id}",
     ]
 
-    subnets = ["${aws_subnet.public.*.id}"]
+    subnets = "${var.subnet_ids}"
 
     tags {
       Name               = "Raster Vision BatchWorker"

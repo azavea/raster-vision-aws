@@ -1,8 +1,12 @@
 #
 # Security group resources
 #
+data "aws_subnet" "first" {
+  id = "${var.subnet_ids[0]}"
+}
+
 resource "aws_security_group" "container_instance" {
-  vpc_id = "${aws_vpc.default.id}"
+  vpc_id = "${data.aws_subnet.first.vpc_id}"
 
   ingress {
     from_port   = 22

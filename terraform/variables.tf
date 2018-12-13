@@ -10,10 +10,6 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-variable "aws_availability_zones" {
-  default = ["us-east-1a","us-east-1b","us-east-1c","us-east-1d","us-east-1f"]
-}
-
 variable "batch_ami_id" {}
 
 variable "aws_key_name" {}
@@ -63,15 +59,11 @@ variable "ecr_image_tag" {
   default = "latest"
 }
 
-variable "cidr_block" {
-  default = "10.0.0.0/16"
-}
-
-variable "public_subnet_cidr_blocks" {
-  type    = "list"
-  default = ["10.0.0.0/24", "10.0.2.0/24"]
-}
-
 variable "aws_spot_fleet_service_role_policy_arn" {
   default = "arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole"
+}
+
+variable "subnet_ids" {
+  type        = "list"
+  description = "A list of IDs of subnets in which to launch Batch instances. All subnets must exist in the same VPC."
 }

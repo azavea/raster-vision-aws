@@ -12,3 +12,6 @@ AWS_REGION := us-east-1
 RASTER_VISION_IMAGE := raster-vision-gpu
 ECR_IMAGE := rastervision
 ECR_IMAGE_TAG := latest
+
+# Settings for Terraform
+SUBNET_IDS := [\"subnet-XXXXXXXXXXXXXXXXX\"]

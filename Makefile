@@ -37,6 +37,7 @@ plan: terraform-init
 			-var="aws_key_name=${KEY_PAIR_NAME}" \
 			-var="aws_region=${AWS_REGION}" \
 			-var="ecr_image_tag=${ECR_IMAGE_TAG}" \
+			-var="subnet_ids=${SUBNET_IDS}" \
 			-out="raster-vision.tfplan";
 
 apply:
@@ -49,7 +50,8 @@ destroy:
 			-var="batch_ami_id=${AMI_ID}" \
 			-var="aws_key_name=${KEY_PAIR_NAME}" \
 			-var="aws_region=${AWS_REGION}" \
-			-var="ecr_image_tag=${ECR_IMAGE_TAG}";
+			-var="ecr_image_tag=${ECR_IMAGE_TAG}" \
+			-var="subnet_ids=${SUBNET_IDS}";
 
 publish-container:
 	$(eval ACCOUNT_ID=$(shell aws sts get-caller-identity --output text --query 'Account'))
