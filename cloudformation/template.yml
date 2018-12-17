@@ -1,0 +1,263 @@
+Description: A CloudFormation template for deploying Raster Vision Batch jobs to AWS.
+
+Parameters:
+  Project:
+    Type: String
+    Default: Raster Vision
+    Description: Name of the project associated with the Batch job
+
+  Environment:
+    Type: String
+    Default: Staging
+    Description: Environment of the project being deployed (e.g. Staging, Development, Production)
+
+  Region:
+    Type: String
+    Default: 'us-east-1'
+    Description: AWS Region in which to deploy the Batch job
+
+  AMI:
+    Type: 'AWS::EC2::Image::Id'
+    Default: ami-06681f03ed7f21643
+    Description: Amazon Machine Image to use for the compute environment
+
+  KeyName:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Description: An Amazon EC2 key pair name to use for SSH access to the cluster
+
+  SpotFleetBidPercentage:
+    Type: Number
+    Default: 100
+    Description: >
+      Minimum percentage that a Spot Instance price must be when compared with
+      the On-Demand price for that instance type before instances are launched
+
+  MinimumVCPUs:
+    Type: Number
+    Default: 0
+    Description: The minimum number of EC2 vCPUs that an environment should maintain
+
+  DesiredVCPUs:
+    Type: Number
+    Default: 0
+    Description: The desired number of EC2 vCPUS in the compute environment
+
+  MaxVCPUs:
+    Type: Number
+    Default: 80
+    Description: The maximum number of EC2 vCPUs that an environment can reach
+
+  InstanceTypes:
+    Type: List<String>
+    Default: p2.xlarge
+    Description: A list of instance types that may be launched
+
+  JobDefinitionName:
+    Type: String
+    Default: 'raster-vision-gpu'
+    Description: Specifies the name of the Batch job definition
+
+  InstanceVCPUs:
+    Type: Number
+    Default: 8
+    Description: Number of VCPUs reserved for the container by the task definition
+
+  InstanceMemory:
+    Type: Number
+    Default: 55000
+    Description: The hard limit (in MB) of memory to present to the container
+
+  BatchServiceRolePolicyARN:
+    Type: String
+    Default: 'arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole'
+    Description: The ARN of the IAM role to assign to running Batch instances
+
+  SpotFleetServiceRolePolicyARN:
+    Type: String
+    Default: 'arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole'
+    Description: The ARN of the IAM role to assign to running spot fleet instances
+
+  RepositoryName:
+    Type: String
+    Default: rastervision
+    Description: Specifies the name of the ECR repository to retrieve images from
+
+  ImageName:
+    Type: String
+    Default: 'raster-vision-gpu'
+    Description: Specifies the name of the container image to pull for Batch jobs
+
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: Tag of the image to retrieve from ECR
+
+  VPC:
+    Type: 'AWS::EC2::VPC::Id'
+    Description: Virtual Private Cloud in which to launch Batch instances
+
+  SubnetIds:
+    Type: 'List<AWS:EC2::Subnet::Id>'
+    Description: >
+      A list of IDs of subnets in which to launch Batch instances (all subnets
+      must exist in the VPC you selected)
+
+Resources:
+  BatchServiceIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - batch.amazonaws.com
+      ManagedPolicyArns:
+        - !Ref BatchServiceRolePolicyARN
+
+  SpotFleetIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - spotfleet.amazonaws.com
+      ManagedPolicyArns:
+        - !Ref SpotFleetServiceRolePolicyARN
+
+  BatchInstanceIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role'
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+
+  BatchInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref BatchInstanceIAMRole
+      InstanceProfileName: !Join ['', ['BatchIAM', !Ref Environment]]
+
+  ContainerInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        -
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+        -
+          FromPort: 6006
+          ToPort: 6006
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        -
+          FromPort: 0
+          ToPort: 0
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+      Tags:
+        -
+          Key: Name
+          Value: !Join ['', ['sgRasterVisionContainerInstance' !Ref Environment]]
+        -
+          Key: Project
+          Value: !Ref Project
+        -
+          Key: Environment
+          Value: !Ref Environment
+
+  Repository:
+    Type: 'AWS::ECR::Repository',
+    RepositoryName: !Ref RepositoryName
+
+  BatchComputeEnvironment:
+    Type: 'AWS::Batch::ComputeEnvironment'
+    Properties:
+      ComputeEnvironmentName: !Join ['', ['rasterVisionBatch', !Ref Environment, 'ComputeEnvironment']]
+      Type: Managed
+      State: ENABLED
+      ServiceRole: !Ref BatchServiceIAMRole
+      ComputeResources:
+        Type: SPOT
+        BidPercentage: !Ref SpotFleetBidPercentage
+        Ec2KeyPair: !Ref KeyName
+        ImageId: !Ref AMI
+        MinvCpus: !Ref MinimumVCPUS
+        DesiredvCpus: !Ref DesiredVCPUs
+        MaxvCpus: !Ref MaximumVCPUs
+        SpotIamFleetRole: !Ref SpotFleetIAMRole
+        InstanceRole: !Ref BatchInstanceProfile
+        Instancetypes: !Ref InstanceTypes
+        SecurityGroupIds:
+          - !Ref ContainerInstanceSecurityGroup
+        Subnets: !Split [',', !Ref SubnetIds]
+        Tags:
+          -
+            Key: Name
+            Value: Raster Vision BatchWorker
+          -
+            Key: ComputeEnvironment
+            Value: Raster Vision
+          -
+            Key: Project
+            Value: !Ref Project
+          -
+            Key: Environment
+            Value: !Ref Environment
+
+  BatchJobQueue:
+    Type: 'AWS::Batch::JobQueue'
+    Properties:
+      JobQueueName: !Join ['' , ['rasterVisionQueue', !Ref Environment]]
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        -
+          ComputeEnvironment: !Ref BatchComputeEnvironment
+          Order: 1
+
+  JobDefinition:
+    JobDefinitionName: !Ref JobDefinitionName
+    Type: Container
+    ContainerProperties:
+      Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
+      Vcpus: !Ref InstanceVCPUs
+      Memory: !Ref InstanceMemory
+      Volumes:
+        -
+          Host:
+            SourcePath: /home/ec2-user
+          Name: home
+      MountPoints:
+        -
+          ContainerPath: /opt/data
+          ReadOnly: false
+          SourceVolume: home
+      ReadOnlyRootFilesystem: false
+      Privileged: true
