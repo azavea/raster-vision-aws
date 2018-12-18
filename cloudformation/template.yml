@@ -1,14 +1,94 @@
 Description: A CloudFormation template for deploying Raster Vision Batch jobs to AWS.
 
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      -
+        Label:
+          default: Project Configuration
+        Parameters:
+          - Project
+          - Environment
+          - Region
+      -
+        Label:
+          default: EC2 Instance Configuration
+        Parameters:
+          - VPC
+          - SubnetIds
+          - KeyName
+          - AMI
+          - InstanceTypes
+          - MinimumVCPUs
+          - DesiredVCPUs
+          - MaximumVCPUs
+      -
+        Label:
+          default: Docker Container Configuration
+        Parameters:
+          - RepositoryName
+          - ImageName
+          - ImageTag
+          - InstanceVCPUs
+          - InstanceMemory
+      -
+        Label:
+          default: Batch Configuration
+        Parameters:
+          - JobDefinitionName
+          - BatchServiceRolePolicyARN
+          - SpotFleetServiceRolePolicyARN
+    ParameterLabels:
+      Project:
+        default: Name
+      Environment:
+        default: Environment
+      Region:
+        default: AWS Region
+      AMI:
+        default: AMI
+      KeyName:
+        default: SSH Key Name
+      SpotFleetBidPercentage:
+        default: Spot Fleet Bid Percentage
+      MinimumVCPUs:
+        default: Minimum vCPU Count
+      DesiredVCPUs:
+        default: Desired vCPU Count
+      MaximumVCPUs:
+        default: Maximum vCPU Count
+      InstanceTypes:
+        default: Instance Types
+      JobDefinitionName:
+        default: Job Definition Name
+      InstanceVCPUs:
+        default: vCPU Limit
+      InstanceMemory:
+        default: Memory Limit
+      BatchServiceRolePolicyARN:
+        default: Batch Service Role
+      SpotFleetServiceRolePolicyARN:
+        default: Spot Fleet Service Role
+      RepositoryName:
+        default: Repository Name
+      ImageName:
+        default: Image Name
+      ImageTag:
+        default: Image Tag
+      VPC:
+        default: VPC
+      SubnetIds:
+        default: Subnets
+
 Parameters:
   Project:
     Type: String
-    Default: Raster Vision
+    Default: Raster Vision CloudFormation
     Description: Name of the project associated with the Batch job
 
   Environment:
     Type: String
-    Default: Staging
+    Default: Testing
     Description: Environment of the project being deployed (e.g. Staging, Development, Production)
 
   Region:
@@ -17,8 +97,8 @@ Parameters:
     Description: AWS Region in which to deploy the Batch job
 
   AMI:
-    Type: 'AWS::EC2::Image::Id'
-    Default: ami-06681f03ed7f21643
+    Type: String
+    Default: 'ami-06681f03ed7f21643'
     Description: Amazon Machine Image to use for the compute environment
 
   KeyName:
@@ -42,7 +122,7 @@ Parameters:
     Default: 0
     Description: The desired number of EC2 vCPUS in the compute environment
 
-  MaxVCPUs:
+  MaximumVCPUs:
     Type: Number
     Default: 80
     Description: The maximum number of EC2 vCPUs that an environment can reach
@@ -50,17 +130,17 @@ Parameters:
   InstanceTypes:
     Type: List<String>
     Default: p2.xlarge
-    Description: A list of instance types that may be launched
+    Description: A comma-separated list of instance types that may be launched
 
   JobDefinitionName:
     Type: String
-    Default: 'raster-vision-gpu'
-    Description: Specifies the name of the Batch job definition
+    Default: 'raster-vision-gpu-testing'
+    Description: Specifies the name of the Batch Job Definition to create
 
   InstanceVCPUs:
     Type: Number
     Default: 8
-    Description: Number of VCPUs reserved for the container by the task definition
+    Description: Number of vCPUs reserved for the container by the task definition
 
   InstanceMemory:
     Type: Number
@@ -79,8 +159,8 @@ Parameters:
 
   RepositoryName:
     Type: String
-    Default: rastervision
-    Description: Specifies the name of the ECR repository to retrieve images from
+    Default: 'raster-vision-testing'
+    Description: Specifies the name of the ECR repository to create and retrieve images from
 
   ImageName:
     Type: String
@@ -90,14 +170,14 @@ Parameters:
   ImageTag:
     Type: String
     Default: latest
-    Description: Tag of the image to retrieve from ECR
+    Description: Tag of the container image to retrieve from ECR
 
   VPC:
     Type: 'AWS::EC2::VPC::Id'
     Description: Virtual Private Cloud in which to launch Batch instances
 
   SubnetIds:
-    Type: 'List<AWS:EC2::Subnet::Id>'
+    Type: 'List<AWS::EC2::Subnet::Id>'
     Description: >
       A list of IDs of subnets in which to launch Batch instances (all subnets
       must exist in the VPC you selected)
@@ -164,6 +244,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
+      GroupDescription: !Join ['', ['Security group for ', !Ref Project, ' (', !Ref Environment, ')']]
       SecurityGroupIngress:
         -
           FromPort: 22
@@ -184,7 +265,7 @@ Resources:
       Tags:
         -
           Key: Name
-          Value: !Join ['', ['sgRasterVisionContainerInstance' !Ref Environment]]
+          Value: !Join ['', ['sgRasterVisionContainerInstance', !Ref Environment]]
         -
           Key: Project
           Value: !Ref Project
@@ -193,8 +274,9 @@ Resources:
           Value: !Ref Environment
 
   Repository:
-    Type: 'AWS::ECR::Repository',
-    RepositoryName: !Ref RepositoryName
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Ref RepositoryName
 
   BatchComputeEnvironment:
     Type: 'AWS::Batch::ComputeEnvironment'
@@ -208,28 +290,20 @@ Resources:
         BidPercentage: !Ref SpotFleetBidPercentage
         Ec2KeyPair: !Ref KeyName
         ImageId: !Ref AMI
-        MinvCpus: !Ref MinimumVCPUS
+        MinvCpus: !Ref MinimumVCPUs
         DesiredvCpus: !Ref DesiredVCPUs
         MaxvCpus: !Ref MaximumVCPUs
         SpotIamFleetRole: !Ref SpotFleetIAMRole
         InstanceRole: !Ref BatchInstanceProfile
-        Instancetypes: !Ref InstanceTypes
+        InstanceTypes: !Ref InstanceTypes
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
-        Subnets: !Split [',', !Ref SubnetIds]
+        Subnets: !Ref SubnetIds
         Tags:
-          -
-            Key: Name
-            Value: Raster Vision BatchWorker
-          -
-            Key: ComputeEnvironment
-            Value: Raster Vision
-          -
-            Key: Project
-            Value: !Ref Project
-          -
-            Key: Environment
-            Value: !Ref Environment
+          Name: Raster Vision BatchWorker
+          ComputeEnvironment: Raster Vision
+          Project: !Ref Project
+          Environment: !Ref Environment
 
   BatchJobQueue:
     Type: 'AWS::Batch::JobQueue'
@@ -243,21 +317,23 @@ Resources:
           Order: 1
 
   JobDefinition:
-    JobDefinitionName: !Ref JobDefinitionName
-    Type: Container
-    ContainerProperties:
-      Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
-      Vcpus: !Ref InstanceVCPUs
-      Memory: !Ref InstanceMemory
-      Volumes:
-        -
-          Host:
-            SourcePath: /home/ec2-user
-          Name: home
-      MountPoints:
-        -
-          ContainerPath: /opt/data
-          ReadOnly: false
-          SourceVolume: home
-      ReadOnlyRootFilesystem: false
-      Privileged: true
+    Type: 'AWS::Batch::JobDefinition'
+    Properties:
+      Type: Container
+      JobDefinitionName: !Ref JobDefinitionName
+      ContainerProperties:
+        Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
+        Vcpus: !Ref InstanceVCPUs
+        Memory: !Ref InstanceMemory
+        Volumes:
+          -
+            Host:
+              SourcePath: /home/ec2-user
+            Name: home
+        MountPoints:
+          -
+            ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+        ReadonlyRootFilesystem: false
+        Privileged: true
