@@ -9,7 +9,6 @@ Metadata:
         Parameters:
           - Project
           - Environment
-          - Region
       -
         Label:
           default: EC2 Instance Configuration
@@ -36,15 +35,11 @@ Metadata:
           default: Batch Configuration
         Parameters:
           - JobDefinitionName
-          - BatchServiceRolePolicyARN
-          - SpotFleetServiceRolePolicyARN
     ParameterLabels:
       Project:
         default: Name
       Environment:
         default: Environment
-      Region:
-        default: AWS Region
       AMI:
         default: AMI
       KeyName:
@@ -65,10 +60,6 @@ Metadata:
         default: vCPU Limit
       InstanceMemory:
         default: Memory Limit
-      BatchServiceRolePolicyARN:
-        default: Batch Service Role
-      SpotFleetServiceRolePolicyARN:
-        default: Spot Fleet Service Role
       RepositoryName:
         default: Repository Name
       ImageName:
@@ -88,26 +79,21 @@ Parameters:
 
   Environment:
     Type: String
-    Default: Testing
+    Default: Unknown
     Description: Environment of the project being deployed (e.g. Staging, Development, Production)
 
-  Region:
-    Type: String
-    Default: 'us-east-1'
-    Description: AWS Region in which to deploy the Batch job
-
   AMI:
-    Type: String
-    Default: 'ami-06681f03ed7f21643'
+    Type: AWS::EC2::Image::Id
+    Default: ami-06681f03ed7f21643
     Description: Amazon Machine Image to use for the compute environment
 
   KeyName:
-    Type: 'AWS::EC2::KeyPair::KeyName'
+    Type: AWS::EC2::KeyPair::KeyName
     Description: An Amazon EC2 key pair name to use for SSH access to the cluster
 
   SpotFleetBidPercentage:
     Type: Number
-    Default: 100
+    Default: 40
     Description: >
       Minimum percentage that a Spot Instance price must be when compared with
       the On-Demand price for that instance type before instances are launched
@@ -130,6 +116,10 @@ Parameters:
   InstanceTypes:
     Type: List<String>
     Default: p2.xlarge
+    AllowedValues:
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
     Description: A comma-separated list of instance types that may be launched
 
   JobDefinitionName:
@@ -146,16 +136,6 @@ Parameters:
     Type: Number
     Default: 55000
     Description: The hard limit (in MB) of memory to present to the container
-
-  BatchServiceRolePolicyARN:
-    Type: String
-    Default: 'arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole'
-    Description: The ARN of the IAM role to assign to running Batch instances
-
-  SpotFleetServiceRolePolicyARN:
-    Type: String
-    Default: 'arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole'
-    Description: The ARN of the IAM role to assign to running spot fleet instances
 
   RepositoryName:
     Type: String
@@ -197,7 +177,7 @@ Resources:
               Service:
                 - batch.amazonaws.com
       ManagedPolicyArns:
-        - !Ref BatchServiceRolePolicyARN
+        - 'arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole'
 
   SpotFleetIAMRole:
     Type: 'AWS::IAM::Role'
@@ -213,7 +193,7 @@ Resources:
               Service:
                 - spotfleet.amazonaws.com
       ManagedPolicyArns:
-        - !Ref SpotFleetServiceRolePolicyARN
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole'
 
   BatchInstanceIAMRole:
     Type: 'AWS::IAM::Role'
@@ -265,7 +245,7 @@ Resources:
       Tags:
         -
           Key: Name
-          Value: !Join ['', ['sgRasterVisionContainerInstance', !Ref Environment]]
+          Value: 'sgRasterVisionContainerInstance'
         -
           Key: Project
           Value: !Ref Project
