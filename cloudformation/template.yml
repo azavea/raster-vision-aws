@@ -116,10 +116,6 @@ Parameters:
   InstanceTypes:
     Type: List<String>
     Default: p2.xlarge
-    AllowedValues:
-      - p2.xlarge
-      - p2.8xlarge
-      - p2.16xlarge
     Description: A comma-separated list of instance types that may be launched
 
   JobDefinitionName:
