@@ -1,13 +1,13 @@
 # Raster Vision AWS Batch runner setup
 
-This repository contains the deployment code that sets up the necessary AWS resources to utilize the AWS Batch runner in [Raster Vision](https://rastervision.io). Deployment is driven by [Terraform](https://terraform.io/) and the [AWS Command Line Interface (CLI)](http://aws.amazon.com/cli/) through a local Docker Compose environment.
+This repository contains the deployment code that sets up the necessary AWS resources to utilize the AWS Batch runner in [Raster Vision](https://rastervision.io). Deployment can be driven either by [Terraform](https://terraform.io/) and the [AWS Command Line Interface (CLI)](http://aws.amazon.com/cli/) through a local Docker Compose environment, or via the AWS console using a [CloudFormation template](https://aws.amazon.com/cloudformation/aws-cloudformation-templates/).
 
 ## Table of Contents ##
 
 * [AWS Credentials](#aws-credentials)
 * [Packer Image](#packer-docker-image)
 * [AMI Creation](#ami-creation)
-* [AWS Batch Resources](#aws-batch-resources)
+* [Deploying Batch resources](#deploying-batch-resources)
 
 ## AWS Credentials ##
 
@@ -90,16 +90,39 @@ off of the instance, and shut the instance down.
 Be sure to record the AMI ID, which will be given in the last line of the output for `make create-image`
 on a successful run. Put this in the `settings.mk` as `AMI_ID`.
 
-## AWS Batch ##
+## Deploying Batch resources ##
 
-Create the AWS Batch computer environment, queue, and more by doing:
+Once you have an AMI ready, you have two options for deploying Batch resources: you can use Terraform and the command line, or you can use the AWS CloudFormation console.
+
+### Option A: Terraform and the command line
+
+Create the AWS Batch compute environment, queue, and more by doing:
 
 ```shell
 > make plan
 > make apply
 ```
 
-## Publish the Raster Vision container to ECS ##
+### Option B: AWS CloudFormation console
+
+To deploy AWS Batch resources using AWS CloudFormation, start by logging into your AWS console. Then, follow the steps below:
+
+- Navigate to `CloudFormation > Create Stack`
+- In the `Choose a template field`, select `Upload a template to Amazon S3` and upload the template in `cloudformation/template.yml`
+- Specify the following required parameters:
+    - `Stack Name`: The name of your CloudFormation stack
+    - `VPC`: The ID of the Virtual Private Cloud in which to deploy your resource. Your account should have at least one by default.
+    - `Subnets`: The ID of any subnets that you want to deploy your resources into. Your account should have at least two by default; make sure that the subnets you select are in the VPC that you chose by using the AWS VPC console, or else CloudFormation will throw an error. (Subnets are tied to availability zones, and so affect spot prices.)
+    - `SSH Key Name`: The name of the SSH key pair you want to be able to use to shell into your Batch instances. If you've created an EC2 instance before, you should already have one you can use; otherwise, you can create one in the EC2 console.
+    - `AMI`: Provide the ID of the AMI that you created above.
+- Adjust any preset parameters that you want to change (the defaults should be fine for most users) and click `Next`
+- Accept all default options on the `Options` page and click `Next`
+- Accept `I acknowledge that AWS CloudFormation might create IAM resources with custom names` on the `Review` page and click `Create`
+- Watch your resources get deployed!
+
+### Publish the Raster Vision container to ECS 
+
+Once you've deployed Batch resources with either Terraform or the AWS CloudFormation console, the last step is to publish your Raster Vision container to ECS where Batch can pull it.
 
 Use
 

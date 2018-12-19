@@ -1,0 +1,315 @@
+Description: A CloudFormation template for deploying Raster Vision Batch jobs to AWS.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: Project Configuration
+        Parameters:
+          - Project
+          - Environment
+      -
+        Label:
+          default: EC2 Instance Configuration
+        Parameters:
+          - VPC
+          - SubnetIds
+          - KeyName
+          - AMI
+          - InstanceTypes
+          - MinimumVCPUs
+          - DesiredVCPUs
+          - MaximumVCPUs
+      -
+        Label:
+          default: Docker Container Configuration
+        Parameters:
+          - RepositoryName
+          - ImageName
+          - ImageTag
+          - InstanceVCPUs
+          - InstanceMemory
+      -
+        Label:
+          default: Batch Configuration
+        Parameters:
+          - JobDefinitionName
+    ParameterLabels:
+      Project:
+        default: Name
+      Environment:
+        default: Environment
+      AMI:
+        default: AMI
+      KeyName:
+        default: SSH Key Name
+      SpotFleetBidPercentage:
+        default: Spot Fleet Bid Percentage
+      MinimumVCPUs:
+        default: Minimum vCPU Count
+      DesiredVCPUs:
+        default: Desired vCPU Count
+      MaximumVCPUs:
+        default: Maximum vCPU Count
+      InstanceTypes:
+        default: Instance Types
+      JobDefinitionName:
+        default: Job Definition Name
+      InstanceVCPUs:
+        default: vCPU Limit
+      InstanceMemory:
+        default: Memory Limit
+      RepositoryName:
+        default: Repository Name
+      ImageName:
+        default: Image Name
+      ImageTag:
+        default: Image Tag
+      VPC:
+        default: VPC
+      SubnetIds:
+        default: Subnets
+
+Parameters:
+  Project:
+    Type: String
+    Default: Raster Vision CloudFormation
+    Description: Name of the project associated with the Batch job
+
+  Environment:
+    Type: String
+    Default: Unknown
+    Description: Environment of the project being deployed (e.g. Staging, Development, Production)
+
+  AMI:
+    Type: AWS::EC2::Image::Id
+    Default: ami-06681f03ed7f21643
+    Description: Amazon Machine Image to use for the compute environment
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: An Amazon EC2 key pair name to use for SSH access to the cluster
+
+  SpotFleetBidPercentage:
+    Type: Number
+    Default: 40
+    Description: >
+      Minimum percentage that a Spot Instance price must be when compared with
+      the On-Demand price for that instance type before instances are launched
+
+  MinimumVCPUs:
+    Type: Number
+    Default: 0
+    Description: The minimum number of EC2 vCPUs that an environment should maintain
+
+  DesiredVCPUs:
+    Type: Number
+    Default: 0
+    Description: The desired number of EC2 vCPUS in the compute environment
+
+  MaximumVCPUs:
+    Type: Number
+    Default: 80
+    Description: The maximum number of EC2 vCPUs that an environment can reach
+
+  InstanceTypes:
+    Type: List<String>
+    Default: p2.xlarge
+    Description: A comma-separated list of instance types that may be launched
+
+  JobDefinitionName:
+    Type: String
+    Default: raster-vision-gpu-testing
+    Description: Specifies the name of the Batch Job Definition to create
+
+  InstanceVCPUs:
+    Type: Number
+    Default: 8
+    Description: Number of vCPUs reserved for the container by the task definition
+
+  InstanceMemory:
+    Type: Number
+    Default: 55000
+    Description: The hard limit (in MB) of memory to present to the container
+
+  RepositoryName:
+    Type: String
+    Default: raster-vision-testing
+    Description: Specifies the name of the ECR repository to create and retrieve images from
+
+  ImageName:
+    Type: String
+    Default: raster-vision-gpu
+    Description: Specifies the name of the container image to pull for Batch jobs
+
+  ImageTag:
+    Type: String
+    Default: latest
+    Description: Tag of the container image to retrieve from ECR
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: Virtual Private Cloud in which to launch Batch instances
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >
+      A list of IDs of subnets in which to launch Batch instances (all subnets
+      must exist in the VPC you selected)
+
+Resources:
+  BatchServiceIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - batch.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  SpotFleetIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - spotfleet.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+
+  BatchInstanceIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  BatchInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref BatchInstanceIAMRole
+      InstanceProfileName: !Join ['', ['BatchIAM', !Ref Environment]]
+
+  ContainerInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: !Join ['', ['Security group for ', !Ref Project, ' (', !Ref Environment, ')']]
+      SecurityGroupIngress:
+        -
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+        -
+          FromPort: 6006
+          ToPort: 6006
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        -
+          FromPort: 0
+          ToPort: 0
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+      Tags:
+        -
+          Key: Name
+          Value: sgRasterVisionContainerInstance
+        -
+          Key: Project
+          Value: !Ref Project
+        -
+          Key: Environment
+          Value: !Ref Environment
+
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+
+  BatchComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      ComputeEnvironmentName: !Join ['', ['rasterVisionBatch', !Ref Environment, 'ComputeEnvironment']]
+      Type: Managed
+      State: ENABLED
+      ServiceRole: !Ref BatchServiceIAMRole
+      ComputeResources:
+        Type: SPOT
+        BidPercentage: !Ref SpotFleetBidPercentage
+        Ec2KeyPair: !Ref KeyName
+        ImageId: !Ref AMI
+        MinvCpus: !Ref MinimumVCPUs
+        DesiredvCpus: !Ref DesiredVCPUs
+        MaxvCpus: !Ref MaximumVCPUs
+        SpotIamFleetRole: !Ref SpotFleetIAMRole
+        InstanceRole: !Ref BatchInstanceProfile
+        InstanceTypes: !Ref InstanceTypes
+        SecurityGroupIds:
+          - !Ref ContainerInstanceSecurityGroup
+        Subnets: !Ref SubnetIds
+        Tags:
+          Name: Raster Vision BatchWorker
+          ComputeEnvironment: Raster Vision
+          Project: !Ref Project
+          Environment: !Ref Environment
+
+  BatchJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      JobQueueName: !Join ['' , ['rasterVisionQueue', !Ref Environment]]
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        -
+          ComputeEnvironment: !Ref BatchComputeEnvironment
+          Order: 1
+
+  JobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      Type: Container
+      JobDefinitionName: !Ref JobDefinitionName
+      ContainerProperties:
+        Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
+        Vcpus: !Ref InstanceVCPUs
+        Memory: !Ref InstanceMemory
+        Volumes:
+          -
+            Host:
+              SourcePath: /home/ec2-user
+            Name: home
+        MountPoints:
+          -
+            ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+        ReadonlyRootFilesystem: false
+        Privileged: true
