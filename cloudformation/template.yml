@@ -1,7 +1,7 @@
 Description: A CloudFormation template for deploying Raster Vision Batch jobs to AWS.
 
 Metadata:
-  'AWS::CloudFormation::Interface':
+  AWS::CloudFormation::Interface:
     ParameterGroups:
       -
         Label:
@@ -124,7 +124,7 @@ Parameters:
 
   JobDefinitionName:
     Type: String
-    Default: 'raster-vision-gpu-testing'
+    Default: raster-vision-gpu-testing
     Description: Specifies the name of the Batch Job Definition to create
 
   InstanceVCPUs:
@@ -139,12 +139,12 @@ Parameters:
 
   RepositoryName:
     Type: String
-    Default: 'raster-vision-testing'
+    Default: raster-vision-testing
     Description: Specifies the name of the ECR repository to create and retrieve images from
 
   ImageName:
     Type: String
-    Default: 'raster-vision-gpu'
+    Default: raster-vision-gpu
     Description: Specifies the name of the container image to pull for Batch jobs
 
   ImageTag:
@@ -153,67 +153,67 @@ Parameters:
     Description: Tag of the container image to retrieve from ECR
 
   VPC:
-    Type: 'AWS::EC2::VPC::Id'
+    Type: AWS::EC2::VPC::Id
     Description: Virtual Private Cloud in which to launch Batch instances
 
   SubnetIds:
-    Type: 'List<AWS::EC2::Subnet::Id>'
+    Type: List<AWS::EC2::Subnet::Id>
     Description: >
       A list of IDs of subnets in which to launch Batch instances (all subnets
       must exist in the VPC you selected)
 
 Resources:
   BatchServiceIAMRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           -
             Effect: Allow
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
             Principal:
               Service:
                 - batch.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole'
+        - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
 
   SpotFleetIAMRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           -
             Effect: Allow
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
             Principal:
               Service:
                 - spotfleet.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole'
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
 
   BatchInstanceIAMRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           -
             Effect: Allow
             Action:
-              - 'sts:AssumeRole'
+              - sts:AssumeRole
             Principal:
               Service:
                 - ec2.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role'
-        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
   BatchInstanceProfile:
-    Type: 'AWS::IAM::InstanceProfile'
+    Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
@@ -221,7 +221,7 @@ Resources:
       InstanceProfileName: !Join ['', ['BatchIAM', !Ref Environment]]
 
   ContainerInstanceSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
+    Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
       GroupDescription: !Join ['', ['Security group for ', !Ref Project, ' (', !Ref Environment, ')']]
@@ -245,7 +245,7 @@ Resources:
       Tags:
         -
           Key: Name
-          Value: 'sgRasterVisionContainerInstance'
+          Value: sgRasterVisionContainerInstance
         -
           Key: Project
           Value: !Ref Project
@@ -254,12 +254,12 @@ Resources:
           Value: !Ref Environment
 
   Repository:
-    Type: 'AWS::ECR::Repository'
+    Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Ref RepositoryName
 
   BatchComputeEnvironment:
-    Type: 'AWS::Batch::ComputeEnvironment'
+    Type: AWS::Batch::ComputeEnvironment
     Properties:
       ComputeEnvironmentName: !Join ['', ['rasterVisionBatch', !Ref Environment, 'ComputeEnvironment']]
       Type: Managed
@@ -286,7 +286,7 @@ Resources:
           Environment: !Ref Environment
 
   BatchJobQueue:
-    Type: 'AWS::Batch::JobQueue'
+    Type: AWS::Batch::JobQueue
     Properties:
       JobQueueName: !Join ['' , ['rasterVisionQueue', !Ref Environment]]
       Priority: 1
@@ -297,7 +297,7 @@ Resources:
           Order: 1
 
   JobDefinition:
-    Type: 'AWS::Batch::JobDefinition'
+    Type: AWS::Batch::JobDefinition
     Properties:
       Type: Container
       JobDefinitionName: !Ref JobDefinitionName
