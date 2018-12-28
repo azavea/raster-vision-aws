@@ -79,6 +79,7 @@ Parameters:
     Description: Environment of the project being deployed (e.g. Staging, Development, Production)
     MinLength: 1
     AllowedPattern: ^[a-zA-Z0-9]*$
+    ConstraintDescription: must only contain uppercase and lowercase letters and numbers
 
   Slug:
     Type: String
@@ -88,6 +89,7 @@ Parameters:
       RasterVisionIamRole becomes yournameRasterVisionIamRole)
     MaxLength: 12
     AllowedPattern: ^[a-z0-9]*$
+    ConstraintDescription: must only contain lowercase letters and numbers
 
   AMI:
     Type: AWS::EC2::Image::Id
