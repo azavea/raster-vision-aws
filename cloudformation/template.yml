@@ -27,6 +27,10 @@ Metadata:
         Parameters:
           - RepositoryName
           - ImageTag
+      -
+        Label:
+          default: Docker Container Configuration
+        Parameters:
           - InstanceVCPUs
           - InstanceMemory
     ParameterLabels:
