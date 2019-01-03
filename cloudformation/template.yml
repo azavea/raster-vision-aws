@@ -5,35 +5,40 @@ Metadata:
     ParameterGroups:
       -
         Label:
-          default: Project Configuration
+          default: Project Metadata
         Parameters:
           - Prefix
       -
         Label:
-          default: EC2 Instance Configuration
+          default: Required Parameters
         Parameters:
           - VPC
           - SubnetIds
           - KeyName
+      -
+        Label:
+          default: AMIs and Instance Types (Advanced)
+        Parameters:
           - GpuAMI
           - CpuAMI
           - GpuInstanceTypes
           - CpuInstanceTypes
+      -
+        Label:
+          default: Batch Compute Parameters (Advanced)
+        Parameters:
           - MinimumVCPUs
           - DesiredVCPUs
           - MaximumVCPUs
           - CidrRange
+          - SpotFleetBidPercentage
       -
         Label:
-          default: Container Image Configuration
+          default: Container Image Parameters (Advanced)
         Parameters:
           - GpuRepositoryName
           - CpuRepositoryName
           - ImageTag
-      -
-        Label:
-          default: Docker Container Configuration
-        Parameters:
           - InstanceVCPUs
           - InstanceMemory
     ParameterLabels:
@@ -140,7 +145,7 @@ Parameters:
 
   CpuInstanceTypes:
     Type: List<String>
-    Default: p2.xlarge
+    Default: c4.xlarge
     Description: >
       A comma-separated list of instance types that may be launched with the
       CPU-enabled AMI
