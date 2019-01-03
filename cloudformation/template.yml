@@ -15,8 +15,10 @@ Metadata:
           - VPC
           - SubnetIds
           - KeyName
-          - AMI
-          - InstanceTypes
+          - GpuAMI
+          - CpuAMI
+          - GpuInstanceTypes
+          - CpuInstanceTypes
           - MinimumVCPUs
           - DesiredVCPUs
           - MaximumVCPUs
@@ -25,7 +27,8 @@ Metadata:
         Label:
           default: Container Image Configuration
         Parameters:
-          - RepositoryName
+          - GpuRepositoryName
+          - CpuRepositoryName
           - ImageTag
       -
         Label:
@@ -36,8 +39,10 @@ Metadata:
     ParameterLabels:
       Prefix:
         default: Prefix
-      AMI:
-        default: AMI
+      GpuAMI:
+        default: AMI (GPU)
+      CpuAMI:
+        default: AMI (CPU)
       KeyName:
         default: SSH Key Name
       SpotFleetBidPercentage:
@@ -50,14 +55,18 @@ Metadata:
         default: Maximum vCPU Count
       CidrRange:
         default: CIDR Range
-      InstanceTypes:
-        default: Instance Types
+      GpuInstanceTypes:
+        default: Instance Types (GPU)
+      CpuInstanceTypes:
+        default: Instance Types (CPU)
       InstanceVCPUs:
         default: vCPU Limit
       InstanceMemory:
         default: Memory Limit
-      RepositoryName:
-        default: Repository Name
+      CpuRepositoryName:
+        default: Repository Name (CPU)
+      GpuRepositoryName:
+        default: Repository Name (GPU)
       ImageTag:
         default: Image Tag
       VPC:
@@ -76,10 +85,15 @@ Parameters:
     AllowedPattern: ^[a-z0-9]*$
     ConstraintDescription: must only contain lowercase letters and numbers
 
-  AMI:
+  GpuAMI:
     Type: AWS::EC2::Image::Id
     Default: ami-06681f03ed7f21643
-    Description: Amazon Machine Image to use for the compute environment
+    Description: Amazon Machine Image to use for the GPU-enabled compute environment
+
+  CpuAMI:
+    Type: AWS::EC2::Image::Id
+    Default: ami-06681f03ed7f21643
+    Description: Amazon Machine Image to use for the CPU-enabled compute environment
 
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -117,10 +131,19 @@ Parameters:
     AllowedPattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$
     ConstraintDescription: must be a valid IPv4 address or CIDR range
 
-  InstanceTypes:
+  GpuInstanceTypes:
     Type: List<String>
     Default: p2.xlarge
-    Description: A comma-separated list of instance types that may be launched
+    Description: >
+      A comma-separated list of instance types that may be launched with the
+      GPU-enabled AMI
+
+  CpuInstanceTypes:
+    Type: List<String>
+    Default: p2.xlarge
+    Description: >
+      A comma-separated list of instance types that may be launched with the
+      CPU-enabled AMI
 
   InstanceVCPUs:
     Type: Number
@@ -132,7 +155,7 @@ Parameters:
     Default: 40000
     Description: The hard limit (in MB) of memory to present to the container
 
-  RepositoryName:
+  GpuRepositoryName:
     Type: String
     Default: ""
     Description: >
@@ -140,12 +163,20 @@ Parameters:
       pushing and pulling container images -- if empty, pulls the latest
       GPU-based Raster Vision container image from Quay.io instead
 
+  CpuRepositoryName:
+    Type: String
+    Default: ""
+    Description: >
+      (Optional) Specifies the name of an ECR repository to create for use in
+      pushing and pulling CPU-enabled images -- if empty, pulls the latest
+      CPU-based Raster Vision container image from Quay.io instead
+
   ImageTag:
     Type: String
     Default: ""
     Description: >
       (Optional) Tag of the container image to retrieve from ECR -- required
-      if RepositoryName is not empty
+      if CpuRepositoryName or GpuRepositoryName is not empty
 
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -158,8 +189,10 @@ Parameters:
       must exist in the VPC you selected)
 
 Conditions:
-  UseHostedContainerImage: !Equals [!Ref RepositoryName, ""]
-  UseCustomContainerImage: !Not [!Equals [!Ref RepositoryName, ""]]
+  UseHostedGpuImage: !Equals [!Ref GpuRepositoryName, ""]
+  UseCustomGpuImage: !Not [!Equals [!Ref GpuRepositoryName, ""]]
+  UseHostedCpuImage: !Equals [!Ref CpuRepositoryName, ""]
+  UseCustomCpuImage: !Not [!Equals [!Ref CpuRepositoryName, ""]]
 
 Resources:
   BatchServiceIAMRole:
@@ -250,16 +283,22 @@ Resources:
           Key: Name
           Value: !Join ['', [!Ref Prefix, 'RasterVisionSecurityGroup']]
 
-  Repository:
+  GpuRepository:
     Type: AWS::ECR::Repository
-    Condition: UseCustomContainerImage
+    Condition: UseCustomGpuImage
     Properties:
-      RepositoryName: !Ref RepositoryName
+      RepositoryName: !Ref GpuRepositoryName
 
-  BatchComputeEnvironment:
+  CpuRepository:
+    Type: AWS::ECR::Repository
+    Condition: UseCustomCpuImage
+    Properties:
+      RepositoryName: !Ref CpuRepositoryName
+
+  GpuComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
-      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVisionComputeEnvironment']]
+      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
       Type: Managed
       State: ENABLED
       ServiceRole: !Ref BatchServiceIAMRole
@@ -267,39 +306,75 @@ Resources:
         Type: SPOT
         BidPercentage: !Ref SpotFleetBidPercentage
         Ec2KeyPair: !Ref KeyName
-        ImageId: !Ref AMI
+        ImageId: !Ref GpuAMI
         MinvCpus: !Ref MinimumVCPUs
         DesiredvCpus: !Ref DesiredVCPUs
         MaxvCpus: !Ref MaximumVCPUs
         SpotIamFleetRole: !Ref SpotFleetIAMRole
         InstanceRole: !Ref BatchInstanceProfile
-        InstanceTypes: !Ref InstanceTypes
+        InstanceTypes: !Ref GpuInstanceTypes
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
         Tags:
-          Name: !Join ['', [!Ref Prefix, 'RasterVisionComputeEnvironment']]
+          Name: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
           ComputeEnvironment: Raster Vision
 
-  BatchJobQueue:
+  CpuComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
+      Type: Managed
+      State: ENABLED
+      ServiceRole: !Ref BatchServiceIAMRole
+      ComputeResources:
+        Type: SPOT
+        BidPercentage: !Ref SpotFleetBidPercentage
+        Ec2KeyPair: !Ref KeyName
+        ImageId: !Ref CpuAMI
+        MinvCpus: !Ref MinimumVCPUs
+        DesiredvCpus: !Ref DesiredVCPUs
+        MaxvCpus: !Ref MaximumVCPUs
+        SpotIamFleetRole: !Ref SpotFleetIAMRole
+        InstanceRole: !Ref BatchInstanceProfile
+        InstanceTypes: !Ref CpuInstanceTypes
+        SecurityGroupIds:
+          - !Ref ContainerInstanceSecurityGroup
+        Subnets: !Ref SubnetIds
+        Tags:
+          Name: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
+          ComputeEnvironment: Raster Vision
+
+  GpuJobQueue:
     Type: AWS::Batch::JobQueue
     Properties:
-      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVisionJobQueue']]
+      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVisionGpuJobQueue']]
       Priority: 1
       State: ENABLED
       ComputeEnvironmentOrder:
         -
-          ComputeEnvironment: !Ref BatchComputeEnvironment
+          ComputeEnvironment: !Ref GpuComputeEnvironment
           Order: 1
 
-  CustomJobDefinition:
+  CpuJobQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVisionCpuJobQueue']]
+      Priority: 1
+      State: ENABLED
+      ComputeEnvironmentOrder:
+        -
+          ComputeEnvironment: !Ref CpuComputeEnvironment
+          Order: 1
+
+  CustomGpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseCustomContainerImage
+    Condition: UseCustomGpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomJobDefinition']]
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomGpuJobDefinition']]
       ContainerProperties:
-        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:${ImageTag}"
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref InstanceVCPUs
         Memory: !Ref InstanceMemory
         Volumes:
@@ -315,14 +390,60 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedJobDefinition:
+  HostedGpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseHostedContainerImage
+    Condition: UseHostedGpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedJobDefinition']]
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedGpuJobDefinition']]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:gpu-latest
+        Vcpus: !Ref InstanceVCPUs
+        Memory: !Ref InstanceMemory
+        Volumes:
+          -
+            Host:
+              SourcePath: /home/ec2-user
+            Name: home
+        MountPoints:
+          -
+            ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  CustomCpuJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseCustomCpuImage
+    Properties:
+      Type: Container
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomCpuJobDefinition']]
+      ContainerProperties:
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CpuRepositoryName}:${ImageTag}"
+        Vcpus: !Ref InstanceVCPUs
+        Memory: !Ref InstanceMemory
+        Volumes:
+          -
+            Host:
+              SourcePath: /home/ec2-user
+            Name: home
+        MountPoints:
+          -
+            ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  HostedCpuJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseHostedCpuImage
+    Properties:
+      Type: Container
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedCpuJobDefinition']]
+      ContainerProperties:
+        Image: quay.io/azavea/raster-vision:cpu-latest
         Vcpus: !Ref InstanceVCPUs
         Memory: !Ref InstanceMemory
         Volumes:
