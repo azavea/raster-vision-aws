@@ -21,6 +21,7 @@ Metadata:
           - MinimumVCPUs
           - DesiredVCPUs
           - MaximumVCPUs
+          - CidrRange
       -
         Label:
           default: Docker Container Configuration
@@ -52,6 +53,8 @@ Metadata:
         default: Desired vCPU Count
       MaximumVCPUs:
         default: Maximum vCPU Count
+      CidrRange:
+        default: CIDR Range
       InstanceTypes:
         default: Instance Types
       JobDefinitionName:
@@ -112,6 +115,16 @@ Parameters:
     Type: Number
     Default: 80
     Description: The maximum number of EC2 vCPUs that an environment can reach
+
+  CidrRange:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >
+      Restrict inbound traffic to your EC2 instance to requests coming from
+      a specific CIDR range
+    # Pattern taken from: https://www.regexpal.com/94836
+    AllowedPattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$
+    ConstraintDescription: must be a valid IPv4 address or CIDR range
 
   InstanceTypes:
     Type: List<String>
@@ -226,12 +239,12 @@ Resources:
           FromPort: 22
           ToPort: 22
           IpProtocol: tcp
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref CidrRange
         -
           FromPort: 6006
           ToPort: 6006
           IpProtocol: tcp
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref CidrRange
       SecurityGroupEgress:
         -
           FromPort: 0
