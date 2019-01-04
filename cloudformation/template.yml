@@ -23,14 +23,10 @@ Metadata:
           - CidrRange
       -
         Label:
-          default: Docker Image Configuration
+          default: Container Image Configuration
         Parameters:
           - RepositoryName
           - ImageTag
-      -
-        Label:
-          default: Docker Container Configuration
-        Parameters:
           - InstanceVCPUs
           - InstanceMemory
     ParameterLabels:
@@ -124,12 +120,12 @@ Parameters:
 
   InstanceVCPUs:
     Type: Number
-    Default: 8
+    Default: 4
     Description: Number of vCPUs reserved for the container by the task definition
 
   InstanceMemory:
     Type: Number
-    Default: 55000
+    Default: 40000
     Description: The hard limit (in MB) of memory to present to the container
 
   RepositoryName:
@@ -137,8 +133,8 @@ Parameters:
     Default: ""
     Description: >
       (Optional) Specifies the name of an ECR repository to create for use in
-      pushing and pulling images -- if empty, pulls the latest Raster Vision
-      GPU image from Quay.io instead
+      pushing and pulling container images -- if empty, pulls the latest
+      GPU-based Raster Vision container image from Quay.io instead
 
   ImageTag:
     Type: String
@@ -158,8 +154,8 @@ Parameters:
       must exist in the VPC you selected)
 
 Conditions:
-  UseHostedDockerImage: !Equals [!Ref RepositoryName, ""]
-  UseCustomDockerImage: !Not [!Equals [!Ref RepositoryName, ""]]
+  UseHostedContainerImage: !Equals [!Ref RepositoryName, ""]
+  UseCustomContainerImage: !Not [!Equals [!Ref RepositoryName, ""]]
 
 Resources:
   BatchServiceIAMRole:
@@ -252,7 +248,7 @@ Resources:
 
   Repository:
     Type: AWS::ECR::Repository
-    Condition: UseCustomDockerImage
+    Condition: UseCustomContainerImage
     Properties:
       RepositoryName: !Ref RepositoryName
 
@@ -294,7 +290,7 @@ Resources:
 
   CustomJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseCustomDockerImage
+    Condition: UseCustomContainerImage
     Properties:
       Type: Container
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomJobDefinition']]
@@ -317,7 +313,7 @@ Resources:
 
   HostedJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseHostedDockerImage
+    Condition: UseHostedContainerImage
     Properties:
       Type: Container
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedJobDefinition']]
