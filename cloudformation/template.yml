@@ -9,7 +9,7 @@ Metadata:
         Parameters:
           - Project
           - Environment
-          - Slug
+          - Prefix
       -
         Label:
           default: EC2 Instance Configuration
@@ -36,8 +36,8 @@ Metadata:
         default: Name
       Environment:
         default: Environment
-      Slug:
-        default: Slug
+      Prefix:
+        default: Prefix
       AMI:
         default: AMI
       KeyName:
@@ -71,7 +71,7 @@ Parameters:
   Project:
     Type: String
     Default: Raster Vision CloudFormation
-    Description: Name of the project to associate with new resources
+    Description: Name of the CloudFormation project to associate with new resources
 
   Environment:
     Type: String
@@ -81,7 +81,7 @@ Parameters:
     AllowedPattern: ^[a-zA-Z0-9]*$
     ConstraintDescription: must only contain uppercase and lowercase letters and numbers
 
-  Slug:
+  Prefix:
     Type: String
     Default: ""
     Description: >
@@ -166,7 +166,7 @@ Resources:
   BatchServiceIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'BatchRole']]
+      RoleName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'BatchRole']]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -183,7 +183,7 @@ Resources:
   SpotFleetIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'SpotFleetRole']]
+      RoleName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'SpotFleetRole']]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -200,7 +200,7 @@ Resources:
   BatchInstanceIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'InstanceRole']]
+      RoleName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'InstanceRole']]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -221,14 +221,14 @@ Resources:
       Path: /
       Roles:
         - !Ref BatchInstanceIAMRole
-      InstanceProfileName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'InstanceProfile']]
+      InstanceProfileName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'InstanceProfile']]
 
   ContainerInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'SecurityGroup']]
-      GroupDescription: !Join ['', ['Security group for ', !Ref Project, ' (', !Ref Environment, ',', !Ref Slug, ')']]
+      GroupName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'SecurityGroup']]
+      GroupDescription: !Join ['', ['Security group for ', !Ref Project, ' (', !Ref Environment, ',', !Ref Prefix, ')']]
       SecurityGroupIngress:
         -
           FromPort: 22
@@ -249,7 +249,7 @@ Resources:
       Tags:
         -
           Key: Name
-          Value: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'SecurityGroup']]
+          Value: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'SecurityGroup']]
         -
           Key: Project
           Value: !Ref Project
@@ -265,7 +265,7 @@ Resources:
   BatchComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
-      ComputeEnvironmentName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'ComputeEnvironment']]
+      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'ComputeEnvironment']]
       Type: Managed
       State: ENABLED
       ServiceRole: !Ref BatchServiceIAMRole
@@ -284,7 +284,7 @@ Resources:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
         Tags:
-          Name: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'ComputeEnvironment']]
+          Name: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'ComputeEnvironment']]
           ComputeEnvironment: Raster Vision
           Project: !Ref Project
           Environment: !Ref Environment
@@ -292,7 +292,7 @@ Resources:
   BatchJobQueue:
     Type: AWS::Batch::JobQueue
     Properties:
-      JobQueueName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'JobQueue']]
+      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'JobQueue']]
       Priority: 1
       State: ENABLED
       ComputeEnvironmentOrder:
@@ -304,7 +304,7 @@ Resources:
     Type: AWS::Batch::JobDefinition
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Slug, 'RasterVision', !Ref Environment, 'JobDefinition']]
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVision', !Ref Environment, 'JobDefinition']]
       ContainerProperties:
         Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
         Vcpus: !Ref InstanceVCPUs
