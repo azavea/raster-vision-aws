@@ -23,10 +23,9 @@ Metadata:
           - CidrRange
       -
         Label:
-          default: Docker Container Configuration
+          default: Container Image Configuration
         Parameters:
           - RepositoryName
-          - ImageName
           - ImageTag
           - InstanceVCPUs
           - InstanceMemory
@@ -55,8 +54,6 @@ Metadata:
         default: Memory Limit
       RepositoryName:
         default: Repository Name
-      ImageName:
-        default: Image Name
       ImageTag:
         default: Image Tag
       VPC:
@@ -123,28 +120,28 @@ Parameters:
 
   InstanceVCPUs:
     Type: Number
-    Default: 8
+    Default: 4
     Description: Number of vCPUs reserved for the container by the task definition
 
   InstanceMemory:
     Type: Number
-    Default: 55000
+    Default: 40000
     Description: The hard limit (in MB) of memory to present to the container
 
   RepositoryName:
     Type: String
-    Default: raster-vision-testing
-    Description: Specifies the name of the ECR repository to create and retrieve images from
-
-  ImageName:
-    Type: String
-    Default: raster-vision-gpu
-    Description: Specifies the name of the container image to pull for Batch jobs
+    Default: ""
+    Description: >
+      (Optional) Specifies the name of an ECR repository to create for use in
+      pushing and pulling container images -- if empty, pulls the latest
+      GPU-based Raster Vision container image from Quay.io instead
 
   ImageTag:
     Type: String
-    Default: latest
-    Description: Tag of the container image to retrieve from ECR
+    Default: ""
+    Description: >
+      (Optional) Tag of the container image to retrieve from ECR -- required
+      if RepositoryName is not empty
 
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -155,6 +152,10 @@ Parameters:
     Description: >
       A list of IDs of subnets in which to launch Batch instances (all subnets
       must exist in the VPC you selected)
+
+Conditions:
+  UseHostedContainerImage: !Equals [!Ref RepositoryName, ""]
+  UseCustomContainerImage: !Not [!Equals [!Ref RepositoryName, ""]]
 
 Resources:
   BatchServiceIAMRole:
@@ -247,6 +248,7 @@ Resources:
 
   Repository:
     Type: AWS::ECR::Repository
+    Condition: UseCustomContainerImage
     Properties:
       RepositoryName: !Ref RepositoryName
 
@@ -286,13 +288,37 @@ Resources:
           ComputeEnvironment: !Ref BatchComputeEnvironment
           Order: 1
 
-  JobDefinition:
+  CustomJobDefinition:
     Type: AWS::Batch::JobDefinition
+    Condition: UseCustomContainerImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionJobDefinition']]
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomJobDefinition']]
       ContainerProperties:
-        Image: !Join ['', [!GetAtt Repository.Arn, '/', !Ref ImageName, ':', !Ref ImageTag]]
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}:${ImageTag}"
+        Vcpus: !Ref InstanceVCPUs
+        Memory: !Ref InstanceMemory
+        Volumes:
+          -
+            Host:
+              SourcePath: /home/ec2-user
+            Name: home
+        MountPoints:
+          -
+            ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  HostedJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseHostedContainerImage
+    Properties:
+      Type: Container
+      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedJobDefinition']]
+      ContainerProperties:
+        Image: quay.io/azavea/raster-vision:gpu-latest
         Vcpus: !Ref InstanceVCPUs
         Memory: !Ref InstanceMemory
         Volumes:
