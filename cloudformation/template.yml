@@ -92,12 +92,12 @@ Parameters:
 
   GpuAMI:
     Type: AWS::EC2::Image::Id
-    Default: ami-06681f03ed7f21643
+    Default: ami-08169a3f3a0be41cd
     Description: Amazon Machine Image to use for the GPU-enabled compute environment
 
   CpuAMI:
     Type: AWS::EC2::Image::Id
-    Default: ami-06681f03ed7f21643
+    Default: ami-08169a3f3a0be41cd
     Description: Amazon Machine Image to use for the CPU-enabled compute environment
 
   KeyName:
@@ -106,7 +106,7 @@ Parameters:
 
   SpotFleetBidPercentage:
     Type: Number
-    Default: 40
+    Default: 60
     Description: >
       Minimum percentage that a Spot Instance price must be when compared with
       the On-Demand price for that instance type before instances are launched
@@ -118,7 +118,7 @@ Parameters:
 
   DesiredVCPUs:
     Type: Number
-    Default: 0
+    Default: 2
     Description: The desired number of EC2 vCPUS in the compute environment
 
   MaximumVCPUs:
@@ -280,7 +280,7 @@ Resources:
       SecurityGroupEgress:
         -
           FromPort: 0
-          ToPort: 0
+          ToPort: 65535
           IpProtocol: tcp
           CidrIp: 0.0.0.0/0
       Tags:
