@@ -23,6 +23,7 @@ create-image: validate-packer-template
 		-e AWS_PROFILE=${AWS_PROFILE} \
 		-e AWS_BATCH_BASE_AMI=${AWS_BATCH_BASE_AMI} \
 		-e AWS_ROOT_BLOCK_DEVICE_SIZE=${AWS_ROOT_BLOCK_DEVICE_SIZE} \
+		-e AWS_REGION=${AWS_REGION} \
 		-w /usr/local/src \
 		rastervision/packer \
 		build packer/template-gpu.json
