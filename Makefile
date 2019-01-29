@@ -2,10 +2,11 @@ include settings.mk
 
 .PHONY: publish-container
 
+# For creating an AMI.
 packer-image:
 	docker build -t rastervision/packer -f Dockerfile.packer .
 
-validate-packer-template:
+validate-packer-template: packer-image
 	docker run --rm -it \
 		-v ${PWD}/:/usr/local/src \
 		-v ${HOME}/.aws:/root/.aws:ro \
@@ -16,7 +17,7 @@ validate-packer-template:
 		rastervision/packer \
 		validate packer/template-gpu.json
 
-create-image: validate-packer-template
+create-ami: validate-packer-template
 	docker run --rm -it \
 		-v ${PWD}/:/usr/local/src \
 		-v ${HOME}/.aws:/root/.aws:ro \

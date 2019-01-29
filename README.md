@@ -23,10 +23,6 @@ Default output format [None]:
 
 You will be prompted to enter your AWS credentials, along with a default region. These credentials will be used to authenticate calls to the AWS API when using Terraform and the AWS CLI.
 
-## Packer Docker Image ##
-
-You must ensure that you have the `rastervision/packer` Docker image.
-From within the root directory of the repository, type `make packer-image` to build it.
 
 ## AMI Creation ##
 
