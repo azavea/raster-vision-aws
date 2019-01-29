@@ -17,7 +17,7 @@ Metadata:
           - KeyName
       -
         Label:
-          default: AMIs and Instance Types (Advanced)
+          default: AMIs and Instance Types (Required)
         Parameters:
           - GpuAMI
           - CpuAMI
