@@ -15,12 +15,12 @@ Metadata:
           - VPC
           - SubnetIds
           - KeyName
-      -
-        Label:
-          default: AMIs and Instance Types (Required)
-        Parameters:
           - GpuAMI
           - CpuAMI
+      -
+        Label:
+          default: Instance Types (Advanced)
+        Parameters:
           - GpuInstanceTypes
           - CpuInstanceTypes
       -
@@ -98,12 +98,10 @@ Parameters:
 
   GpuAMI:
     Type: AWS::EC2::Image::Id
-    Default: ami-08169a3f3a0be41cd
     Description: Amazon Machine Image to use for the GPU-enabled compute environment
 
   CpuAMI:
     Type: AWS::EC2::Image::Id
-    Default: ami-08169a3f3a0be41cd
     Description: Amazon Machine Image to use for the CPU-enabled compute environment
 
   KeyName:
