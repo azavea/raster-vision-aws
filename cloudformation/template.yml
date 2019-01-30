@@ -39,8 +39,10 @@ Metadata:
           - GpuRepositoryName
           - CpuRepositoryName
           - ImageTag
-          - InstanceVCPUs
-          - InstanceMemory
+          - GPUInstanceVCPUs
+          - GPUInstanceMemory
+          - CPUInstanceVCPUs
+          - CPUInstanceMemory
     ParameterLabels:
       Prefix:
         default: Prefix
@@ -64,10 +66,14 @@ Metadata:
         default: Instance Types (GPU)
       CpuInstanceTypes:
         default: Instance Types (CPU)
-      InstanceVCPUs:
-        default: vCPU Limit
-      InstanceMemory:
-        default: Memory Limit
+      GPUInstanceVCPUs:
+        default: GPU vCPU Limit
+      GPUInstanceMemory:
+        default: GPU Memory Limit
+      CPUInstanceVCPUs:
+        default: CPU vCPU Limit
+      CPUInstanceMemory:
+        default: CPU Memory Limit
       CpuRepositoryName:
         default: Repository Name (CPU)
       GpuRepositoryName:
@@ -150,15 +156,25 @@ Parameters:
       A comma-separated list of instance types that may be launched with the
       CPU-enabled AMI
 
-  InstanceVCPUs:
+  GPUInstanceVCPUs:
     Type: Number
     Default: 4
-    Description: Number of vCPUs reserved for the container by the task definition
+    Description: Number of vCPUs reserved for the container by the task definition for GPU instances
 
-  InstanceMemory:
+  GPUInstanceMemory:
     Type: Number
     Default: 40000
-    Description: The hard limit (in MB) of memory to present to the container
+    Description: The hard limit (in MB) of memory to present to the container for GPU instances
+
+  CPUInstanceVCPUs:
+    Type: Number
+    Default: 1
+    Description: Number of vCPUs reserved for the container by the task definition for CPU instances
+
+  CPUInstanceMemory:
+    Type: Number
+    Default: 1250
+    Description: The hard limit (in MB) of memory to present to the container for CPU instances
 
   GpuRepositoryName:
     Type: String
@@ -180,7 +196,7 @@ Parameters:
     Type: String
     Default: ""
     Description: >
-      (Optional) Tag of the container image to retrieve from ECR -- required
+      (Optional) Tag of the CPU and GPU container image to retrieve from ECR -- required
       if CpuRepositoryName or GpuRepositoryName is not empty
 
   VPC:
@@ -380,8 +396,8 @@ Resources:
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomGpuJobDefinition']]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GpuRepositoryName}:${ImageTag}"
-        Vcpus: !Ref InstanceVCPUs
-        Memory: !Ref InstanceMemory
+        Vcpus: !Ref GPUInstanceVCPUs
+        Memory: !Ref GPUInstanceMemory
         Volumes:
           -
             Host:
@@ -403,8 +419,8 @@ Resources:
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedGpuJobDefinition']]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:gpu-latest
-        Vcpus: !Ref InstanceVCPUs
-        Memory: !Ref InstanceMemory
+        Vcpus: !Ref GPUInstanceVCPUs
+        Memory: !Ref GPUInstanceMemory
         Volumes:
           -
             Host:
@@ -426,8 +442,8 @@ Resources:
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomCpuJobDefinition']]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CpuRepositoryName}:${ImageTag}"
-        Vcpus: !Ref InstanceVCPUs
-        Memory: !Ref InstanceMemory
+        Vcpus: !Ref CPUInstanceVCPUs
+        Memory: !Ref CPUInstanceMemory
         Volumes:
           -
             Host:
@@ -449,8 +465,8 @@ Resources:
       JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedCpuJobDefinition']]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:cpu-latest
-        Vcpus: !Ref InstanceVCPUs
-        Memory: !Ref InstanceMemory
+        Vcpus: !Ref CPUInstanceVCPUs
+        Memory: !Ref CPUInstanceMemory
         Volumes:
           -
             Host:
