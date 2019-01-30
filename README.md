@@ -6,14 +6,13 @@ This repository contains the deployment code that sets up the necessary AWS reso
 
 * [AWS Account Setup](#aws-account-setup)
 * [AWS Credentials](#aws-credentials)
-* [Packer Image](#packer-docker-image)
 * [AMI Creation](#ami-creation)
 * [Deploying Batch resources](#deploying-batch-resources)
 * [Update Raster Vision configuration](#update-raster-vision-configuration)
 
 ## AWS Account Setup ##
 
-In order to setup Batch using this repo, you will need setup your AWS account so that:
+In order to setup Batch using this repo, you will need to setup your AWS account so that:
 * you have either root access to your AWS account, or an IAM user with admin permissions. It may be possible with less permissions, but we haven't figured out how to do this yet after some experimentation.
 * you have the ability to launch P2 or P3 instances which have GPUs. In the past, it was necessary to open a support ticket to request access to these instances. You will know if this is the case if the Packer job fails when trying to launch the instance.
 * you have requested permission from AWS to use availability zones outside the USA if you would like to use them. (New AWS accounts can't launch EC2 instances in other AZs by default.) If you are in doubt, just use us-east-1.
@@ -93,7 +92,8 @@ To deploy AWS Batch resources using AWS CloudFormation, start by logging into yo
     - `Subnets`: The ID of any subnets that you want to deploy your resources into. Your account should have at least two by default; make sure that the subnets you select are in the VPC that you chose by using the AWS VPC console, or else CloudFormation will throw an error. (Subnets are tied to availability zones, and so affect spot prices.) In addition, you need to choose subnets that are available for the instance type you have chosen. To find which subnets are available, go to Spot Pricing History in the EC2 console and select the instance type. Then look up the availability zones that are present in the VPC console to find the corresponding subnets. ![spot availability zones for p3 instances](/docs/images/spot-azs.png)
     - `SSH Key Name`: The name of the SSH key pair you want to be able to use to shell into your Batch instances. If you've created an EC2 instance before, you should already have one you can use; otherwise, you can create one in the EC2 console. *Note: If you decide to create a new one, you will need to log out and then back in to the console before creating a Cloudformation stack using this key.*
     - `AMI`: For the GPU AMI, provide the ID of the AMI that you created above. **For the CPU AMI, you need to use the ECS-optimized AMI.** You can find the AMI ID for your availability zone [here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html). If you use the same AMI for both, CPU jobs will fail with the following error:
-    ```Container messageCannotStartContainerError: Error response from daemon: OCI runtime create failed: container_linux.go:348: starting container process caused "process_linux.go:402: container init caused \"process_linux.go:385: running prestart hook 0 caused \\\"error runni )
+    ```
+    Container messageCannotStartContainerError: Error response from daemon: OCI runtime create failed: container_linux.go:348: starting container process caused "process_linux.go:402: container init caused \"process_linux.go:385: running prestart hook 0 caused \\\"error runni )
     ```
     - `Instance Types`: Provide the instance types you would like to use. (For GPUs, `p3.2xlarge` is approximately 4 times the speed for 4 times the price.)
 - Adjust any preset parameters that you want to change (the defaults should be fine for most users) and click `Next`.
