@@ -91,7 +91,8 @@ Parameters:
     Default: ""
     Description: >
       Optional lowercase identifier to use for namespacing your resources (e.g.
-      RasterVisionIamRole becomes yournameRasterVisionIamRole)
+      RasterVisionIamRole becomes yournameRasterVisionIamRole). You need to do this if you
+      are setting up multiple RV stacks within one account.
     MaxLength: 12
     AllowedPattern: ^[a-z0-9]*$
     ConstraintDescription: must only contain lowercase letters and numbers

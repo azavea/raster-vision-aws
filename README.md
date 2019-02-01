@@ -33,7 +33,7 @@ You will be prompted to enter your AWS credentials, along with a default region.
 
 ## AMI Creation ##
 
-This step uses packer to install nvidia-docker on the base ECS AMI in order to run GPU jobs on AWS Batch.
+This step uses packer to install nvidia-docker on the base ECS AMI in order to run GPU jobs on AWS Batch. Note an occasional (issue)[https://github.com/azavea/raster-vision-cloudformation/issues/9] with using Packer.
 
 ### Configure the settings ###
 
@@ -70,7 +70,7 @@ so you should go through the three steps rather than copying from the screenshot
 
 ### Create the Custom AMI ###
 
-Ensure that the AWS profile for the account you want to create the AMI in is set in your `AWS_PROFILE` environment variable setting.
+**Ensure that the AWS profile for the account you want to create the AMI in is set in your `AWS_PROFILE` environment variable setting.** If you skip this step, Packer will freeze.
 
 Then run:
 ```shell
@@ -86,6 +86,7 @@ To deploy AWS Batch resources using AWS CloudFormation, start by logging into yo
 
 - Navigate to `CloudFormation > Create Stack`
 - In the `Choose a template field`, select `Upload a template to Amazon S3` and upload the template in `cloudformation/template.yml`
+- `Prefix`: If you are setting up multiple RV stacks within an AWS account, you need to set a prefix for namespacing resources. Otherwise, there will be name collisions with any resources that were created as part of another stack.
 - Specify the following required parameters:
     - `Stack Name`: The name of your CloudFormation stack
     - `VPC`: The ID of the Virtual Private Cloud in which to deploy your resource. Your account should have at least one by default.
