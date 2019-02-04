@@ -11,7 +11,7 @@ sudo yum install -y $PACKAGES
 sudo pkill -SIGHUP dockerd
 
 # Run test container to verify installation
-sudo docker run --privileged --runtime=nvidia --rm nvidia/cuda nvidia-smi
+sudo docker run --privileged --runtime=nvidia --rm nvidia/cuda:9.0 nvidia-smi
 
 # Update Docker daemon.json to user nvidia-container-runtime by default
 sudo tee /etc/docker/daemon.json <<EOF

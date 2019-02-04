@@ -1,17 +1,12 @@
-# Settings for create-ami
+# Settings for create-ami. These should be filled in before running create-ami.
 AWS_BATCH_BASE_AMI := ami-XXXXXXXX
 AWS_ROOT_BLOCK_DEVICE_SIZE := 50
-
-# Settings for create-batch
-#  AMI_ID is derived from the packer step.
-AMI_ID := ami-XXXXXXX
-KEY_PAIR_NAME := some-aws-key
 AWS_REGION := us-east-1
 
-# Settings for ECR
-RASTER_VISION_IMAGE := raster-vision-gpu
-ECR_IMAGE := raster-vision-gpu
+# Settings for publish-container. These should be filled in after running the
+# Cloudformation setup (with the ECR fields set) and before running publish-container.
+RASTER_VISION_CPU_IMAGE := raster-vision-cpu
+RASTER_VISION_GPU_IMAGE := raster-vision-gpu
+ECR_CPU_IMAGE := raster-vision-cpu
+ECR_GPU_IMAGE := raster-vision-gpu
 ECR_IMAGE_TAG := latest
-
-# Settings for Terraform
-SUBNET_IDS := [\"subnet-XXXXXXXXXXXXXXXXX\"]
