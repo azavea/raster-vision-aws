@@ -158,12 +158,12 @@ Parameters:
   GPUInstanceVCPUs:
     Type: Number
     Default: 4
-    Description: Number of vCPUs reserved for the container by the task definition for GPU instances
+    Description: Number of vCPUs reserved for the container by the task definition for GPU instances (8 should be used for P3 instances)
 
   GPUInstanceMemory:
     Type: Number
     Default: 40000
-    Description: The hard limit (in MB) of memory to present to the container for GPU instances
+    Description: The hard limit (in MB) of memory to present to the container for GPU instances (55000 should be used for P3 instances)
 
   CPUInstanceVCPUs:
     Type: Number
