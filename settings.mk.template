@@ -2,6 +2,7 @@
 AWS_BATCH_BASE_AMI := ami-XXXXXXXX
 AWS_ROOT_BLOCK_DEVICE_SIZE := 50
 AWS_REGION := us-east-1
+AWS_PROFILE := raster-vision
 
 # Settings for publish-container. These should be filled in after running the
 # Cloudformation setup (with the ECR fields set) and before running publish-container.
