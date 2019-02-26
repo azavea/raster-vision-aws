@@ -33,7 +33,7 @@ You will be prompted to enter your AWS credentials, along with a default region.
 
 ## AMI Creation ##
 
-This step uses packer to install nvidia-docker on the base ECS AMI in order to run GPU jobs on AWS Batch. Note an occasional (issue)[https://github.com/azavea/raster-vision-cloudformation/issues/9] with using Packer.
+This step uses packer to install nvidia-docker on the base ECS AMI in order to run GPU jobs on AWS Batch.
 
 ### Configure the settings ###
 
