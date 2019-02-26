@@ -3,13 +3,11 @@ Description: A CloudFormation template for deploying Raster Vision Batch jobs to
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      -
-        Label:
+      - Label:
           default: Project Metadata
         Parameters:
           - Prefix
-      -
-        Label:
+      - Label:
           default: Required Parameters
         Parameters:
           - VPC
@@ -17,14 +15,12 @@ Metadata:
           - KeyName
           - GpuAMI
           - CpuAMI
-      -
-        Label:
+      - Label:
           default: Instance Types (Advanced)
         Parameters:
           - GpuInstanceTypes
           - CpuInstanceTypes
-      -
-        Label:
+      - Label:
           default: Batch Compute Parameters (Advanced)
         Parameters:
           - MinimumVCPUs
@@ -32,8 +28,7 @@ Metadata:
           - MaximumVCPUs
           - CidrRange
           - SpotFleetBidPercentage
-      -
-        Label:
+      - Label:
           default: Container Image Parameters (Advanced)
         Parameters:
           - GpuRepositoryName
@@ -218,12 +213,11 @@ Resources:
   BatchServiceIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Prefix, 'RasterVisionBatchRole']]
+      RoleName: !Join ["", [!Ref Prefix, "RasterVisionBatchRole"]]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Action:
               - sts:AssumeRole
             Principal:
@@ -235,12 +229,11 @@ Resources:
   SpotFleetIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Prefix, 'RasterVisionSpotFleetRole']]
+      RoleName: !Join ["", [!Ref Prefix, "RasterVisionSpotFleetRole"]]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Action:
               - sts:AssumeRole
             Principal:
@@ -252,12 +245,11 @@ Resources:
   BatchInstanceIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['', [!Ref Prefix, 'RasterVisionInstanceRole']]
+      RoleName: !Join ["", [!Ref Prefix, "RasterVisionInstanceRole"]]
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Action:
               - sts:AssumeRole
             Principal:
@@ -273,35 +265,33 @@ Resources:
       Path: /
       Roles:
         - !Ref BatchInstanceIAMRole
-      InstanceProfileName: !Join ['', [!Ref Prefix, 'RasterVisionInstanceProfile']]
+      InstanceProfileName:
+        !Join ["", [!Ref Prefix, "RasterVisionInstanceProfile"]]
 
   ContainerInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VPC
-      GroupName: !Join ['', [!Ref Prefix, 'RasterVisionSecurityGroup']]
-      GroupDescription: !Join ['', ['Security group for ', !Ref Prefix, ' (Raster Vision)']]
+      GroupName: !Join ["", [!Ref Prefix, "RasterVisionSecurityGroup"]]
+      GroupDescription:
+        !Join ["", ["Security group for ", !Ref Prefix, " (Raster Vision)"]]
       SecurityGroupIngress:
-        -
-          FromPort: 22
+        - FromPort: 22
           ToPort: 22
           IpProtocol: tcp
           CidrIp: !Ref CidrRange
-        -
-          FromPort: 6006
+        - FromPort: 6006
           ToPort: 6006
           IpProtocol: tcp
           CidrIp: !Ref CidrRange
       SecurityGroupEgress:
-        -
-          FromPort: 0
+        - FromPort: 0
           ToPort: 65535
           IpProtocol: tcp
           CidrIp: 0.0.0.0/0
       Tags:
-        -
-          Key: Name
-          Value: !Join ['', [!Ref Prefix, 'RasterVisionSecurityGroup']]
+        - Key: Name
+          Value: !Join ["", [!Ref Prefix, "RasterVisionSecurityGroup"]]
 
   GpuRepository:
     Type: AWS::ECR::Repository
@@ -318,7 +308,8 @@ Resources:
   GpuComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
-      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
+      ComputeEnvironmentName:
+        !Join ["", [!Ref Prefix, "RasterVisionGpuComputeEnvironment"]]
       Type: Managed
       State: ENABLED
       ServiceRole: !Ref BatchServiceIAMRole
@@ -337,13 +328,14 @@ Resources:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
         Tags:
-          Name: !Join ['', [!Ref Prefix, 'RasterVisionGpuComputeEnvironment']]
+          Name: !Join ["", [!Ref Prefix, "RasterVisionGpuComputeEnvironment"]]
           ComputeEnvironment: Raster Vision
 
   CpuComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
-      ComputeEnvironmentName: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
+      ComputeEnvironmentName:
+        !Join ["", [!Ref Prefix, "RasterVisionCpuComputeEnvironment"]]
       Type: Managed
       State: ENABLED
       ServiceRole: !Ref BatchServiceIAMRole
@@ -362,29 +354,27 @@ Resources:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
         Tags:
-          Name: !Join ['', [!Ref Prefix, 'RasterVisionCpuComputeEnvironment']]
+          Name: !Join ["", [!Ref Prefix, "RasterVisionCpuComputeEnvironment"]]
           ComputeEnvironment: Raster Vision
 
   GpuJobQueue:
     Type: AWS::Batch::JobQueue
     Properties:
-      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVisionGpuJobQueue']]
+      JobQueueName: !Join ["", [!Ref Prefix, "RasterVisionGpuJobQueue"]]
       Priority: 1
       State: ENABLED
       ComputeEnvironmentOrder:
-        -
-          ComputeEnvironment: !Ref GpuComputeEnvironment
+        - ComputeEnvironment: !Ref GpuComputeEnvironment
           Order: 1
 
   CpuJobQueue:
     Type: AWS::Batch::JobQueue
     Properties:
-      JobQueueName: !Join ['', [!Ref Prefix, 'RasterVisionCpuJobQueue']]
+      JobQueueName: !Join ["", [!Ref Prefix, "RasterVisionCpuJobQueue"]]
       Priority: 1
       State: ENABLED
       ComputeEnvironmentOrder:
-        -
-          ComputeEnvironment: !Ref CpuComputeEnvironment
+        - ComputeEnvironment: !Ref CpuComputeEnvironment
           Order: 1
 
   CustomGpuJobDefinition:
@@ -392,19 +382,18 @@ Resources:
     Condition: UseCustomGpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomGpuJobDefinition']]
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionCustomGpuJobDefinition"]]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref GPUInstanceVCPUs
         Memory: !Ref GPUInstanceMemory
         Volumes:
-          -
-            Host:
+          - Host:
               SourcePath: /home/ec2-user
             Name: home
         MountPoints:
-          -
-            ContainerPath: /opt/data
+          - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
         ReadonlyRootFilesystem: false
@@ -415,19 +404,18 @@ Resources:
     Condition: UseHostedGpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedGpuJobDefinition']]
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionHostedGpuJobDefinition"]]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:gpu-latest
         Vcpus: !Ref GPUInstanceVCPUs
         Memory: !Ref GPUInstanceMemory
         Volumes:
-          -
-            Host:
+          - Host:
               SourcePath: /home/ec2-user
             Name: home
         MountPoints:
-          -
-            ContainerPath: /opt/data
+          - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
         ReadonlyRootFilesystem: false
@@ -438,19 +426,18 @@ Resources:
     Condition: UseCustomCpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionCustomCpuJobDefinition']]
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionCustomCpuJobDefinition"]]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref CPUInstanceVCPUs
         Memory: !Ref CPUInstanceMemory
         Volumes:
-          -
-            Host:
+          - Host:
               SourcePath: /home/ec2-user
             Name: home
         MountPoints:
-          -
-            ContainerPath: /opt/data
+          - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
         ReadonlyRootFilesystem: false
@@ -461,19 +448,18 @@ Resources:
     Condition: UseHostedCpuImage
     Properties:
       Type: Container
-      JobDefinitionName: !Join ['', [!Ref Prefix, 'RasterVisionHostedCpuJobDefinition']]
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionHostedCpuJobDefinition"]]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:cpu-latest
         Vcpus: !Ref CPUInstanceVCPUs
         Memory: !Ref CPUInstanceMemory
         Volumes:
-          -
-            Host:
+          - Host:
               SourcePath: /home/ec2-user
             Name: home
         MountPoints:
-          -
-            ContainerPath: /opt/data
+          - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
         ReadonlyRootFilesystem: false
