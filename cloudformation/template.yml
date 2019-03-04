@@ -36,8 +36,10 @@ Metadata:
           - ImageTag
           - GPUInstanceVCPUs
           - GPUInstanceMemory
+          - GPUInstanceStorage
           - CPUInstanceVCPUs
           - CPUInstanceMemory
+          - CPUInstanceStorage
     ParameterLabels:
       Prefix:
         default: Prefix
@@ -65,10 +67,14 @@ Metadata:
         default: GPU vCPU Limit
       GPUInstanceMemory:
         default: GPU Memory Limit
+      GPUInstanceStorage:
+        default: GPU Instance Storage
       CPUInstanceVCPUs:
         default: CPU vCPU Limit
       CPUInstanceMemory:
         default: CPU Memory Limit
+      CPUInstanceStorage:
+        default: CPU Instance Storage
       CpuRepositoryName:
         default: Repository Name (CPU)
       GpuRepositoryName:
@@ -160,6 +166,11 @@ Parameters:
     Default: 40000
     Description: The hard limit (in MB) of memory to present to the container for GPU instances (55000 should be used for P3 instances)
 
+  GPUInstanceStorage:
+    Type: Number
+    Default: 64
+    Description: The amount of EBS storage (in GB) to use for the GPU instance root volume.
+
   CPUInstanceVCPUs:
     Type: Number
     Default: 1
@@ -169,6 +180,11 @@ Parameters:
     Type: Number
     Default: 1250
     Description: The hard limit (in MB) of memory to present to the container for CPU instances
+
+  CPUInstanceStorage:
+    Type: Number
+    Default: 64
+    Description: The amount of EBS storage (in GB) to use for the CPU instance root volume.
 
   GpuRepositoryName:
     Type: String
@@ -305,6 +321,17 @@ Resources:
     Properties:
       RepositoryName: !Ref CpuRepositoryName
 
+  GpuLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: RasterVisionGpuLaunchTemplate
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeType: gp2
+              VolumeSize: !Ref GPUInstanceStorage
+
   GpuComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
@@ -327,9 +354,22 @@ Resources:
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
+        LaunchTemplate:
+          LaunchTemplateId: !Ref GpuLaunchTemplate
         Tags:
           Name: !Join ["", [!Ref Prefix, "RasterVisionGpuComputeEnvironment"]]
           ComputeEnvironment: Raster Vision
+
+  CpuLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: RasterVisionCpuLaunchTemplate
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeType: gp2
+              VolumeSize: !Ref CPUInstanceStorage
 
   CpuComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
@@ -353,6 +393,8 @@ Resources:
         SecurityGroupIds:
           - !Ref ContainerInstanceSecurityGroup
         Subnets: !Ref SubnetIds
+        LaunchTemplate:
+          LaunchTemplateId: !Ref CpuLaunchTemplate
         Tags:
           Name: !Join ["", [!Ref Prefix, "RasterVisionCpuComputeEnvironment"]]
           ComputeEnvironment: Raster Vision
