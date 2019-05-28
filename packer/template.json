@@ -5,7 +5,7 @@
     "builders": [
         {
             "type": "amazon-ebs",
-            "region": "us-east-1",
+            "region": "{{env `AWS_REGION`}}",
             "source_ami": "{{user `aws_batch_base_ami`}}",
             "instance_type": "c3.large",
             "ssh_username": "ec2-user",
