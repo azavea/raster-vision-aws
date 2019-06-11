@@ -1,11 +1,12 @@
 {
     "variables": {
-        "aws_batch_base_ami": "{{env `AWS_BATCH_BASE_AMI`}}"
+        "aws_batch_base_ami": "{{env `AWS_BATCH_BASE_AMI`}}",
+        "region": "{{env `AWS_REGION`}}"
     },
     "builders": [
         {
             "type": "amazon-ebs",
-            "region": "{{env `AWS_REGION`}}",
+            "region": "{{user `region`}}",
             "source_ami": "{{user `aws_batch_base_ami`}}",
             "instance_type": "c3.large",
             "ssh_username": "ec2-user",
