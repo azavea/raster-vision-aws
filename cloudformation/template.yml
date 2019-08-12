@@ -324,7 +324,7 @@ Resources:
   GpuLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: RasterVisionGpuLaunchTemplate
+      LaunchTemplateName: !Join ["", [!Ref Prefix, "RasterVisionGpuLaunchTemplate"]]
       LaunchTemplateData:
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
@@ -363,7 +363,7 @@ Resources:
   CpuLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: RasterVisionCpuLaunchTemplate
+      LaunchTemplateName: !Join ["", [!Ref Prefix, "RasterVisionCpuLaunchTemplate"]]
       LaunchTemplateData:
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
