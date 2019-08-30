@@ -4,10 +4,14 @@ AWS_ROOT_BLOCK_DEVICE_SIZE := 50
 AWS_REGION := us-east-1
 AWS_PROFILE := raster-vision
 
-# Settings for publish-container. These should be filled in after running the
-# Cloudformation setup (with the ECR fields set) and before running publish-container.
-RASTER_VISION_CPU_IMAGE := raster-vision-cpu
-RASTER_VISION_GPU_IMAGE := raster-vision-gpu
-ECR_CPU_IMAGE := raster-vision-cpu
-ECR_GPU_IMAGE := raster-vision-gpu
+# Settings for publish-image. These should be filled in after running the
+# Cloudformation setup (with the ECR fields set) and before running publish-image.
+RASTER_VISION_TF_CPU_IMAGE := raster-vision-tf-cpu
+RASTER_VISION_TF_GPU_IMAGE := raster-vision-tf-gpu
+RASTER_VISION_PYTORCH_IMAGE := raster-vision-pytorch
+
+ECR_TF_CPU_IMAGE := raster-vision-tf-cpu
+ECR_TF_GPU_IMAGE := raster-vision-tf-gpu
+ECR_PYTORCH_IMAGE := raster-vision-pytorch
+
 ECR_IMAGE_TAG := latest
