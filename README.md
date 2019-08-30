@@ -104,7 +104,7 @@ To deploy AWS Batch resources using AWS CloudFormation, start by logging into yo
     ```
     - `Instance Types`: Provide the instance types you would like to use. (For GPUs, `p3.2xlarge` is approximately 4 times the speed for 4 times the price.)
 - Adjust any preset parameters that you want to change (the defaults should be fine for most users) and click `Next`.
-    - Advanced users: If you plan on modifying Raster Vision and would like to publish a custom image to run on Batch, you will need to specify (CPU and GPU) ECR repo names and a tag name to use for both. Note that the repo names cannot be the same as the Stack name (the first field in the UI) and cannot be the same as any existing ECR repo names. If you are in a team environment where you are sharing the AWS account, the repo names should contain an identifier such as your username.
+    - Advanced users: If you plan on modifying Raster Vision and would like to publish a custom image to run on Batch, you will need to specify (Tensorflow CPU, Tensorflow GPU, and PyTorch) ECR repo names and a tag name to use for both. Note that the repo names cannot be the same as the Stack name (the first field in the UI) and cannot be the same as any existing ECR repo names. If you are in a team environment where you are sharing the AWS account, the repo names should contain an identifier such as your username.
 - Accept all default options on the `Options` page and click `Next`
 - Accept `I acknowledge that AWS CloudFormation might create IAM resources with custom names` on the `Review` page and click `Create`
 - Watch your resources get deployed!
@@ -113,19 +113,21 @@ To deploy AWS Batch resources using AWS CloudFormation, start by logging into yo
 
 If you setup ECR repositories during the CloudFormation setup (the "advanced user" option), then you will need to follow this step, which publishes local Raster Vision images to those ECR repositories. Every time you make a change to your local Raster Vision images and want to use those on Batch, you will need to run this step.
 
-Run `./docker/build` in the main Raster Vision repo to build local copies of the CPU and GPU images.
+Run `./docker/build` in the main Raster Vision repo to build local copies of the Tensorflow CPU, Tensorflow GPU, and PyTorch images.
 
 In `settings.mk`, fill out the options shown in the table below.
 
 | Variable         | Description                 |
 |------------------------------|------------------------------------------------------------------------------|
-| `RASTER_VISION_CPU_IMAGE`        | The local Raster Vision CPU image to use.
-| `RASTER_VISION_GPU_IMAGE`        | The local Raster Vision GPU image to use.
-| `ECR_CPU_IMAGE`                  | The name of the ECR CPU image                                                   |
-| `ECR_GPU_IMAGE`                  | The name of the ECR GPU image                                                   |
-| `ECR_IMAGE_TAG`              | The ECR image tag to use, that is the tag in ECR_CPU_IMAGE and ECR_GPU_IMAGE                       |
+| `RASTER_VISION_TF_CPU_IMAGE`        | The local Raster Vision TF CPU image to use.
+| `RASTER_VISION_TF_GPU_IMAGE`        | The local Raster Vision TF GPU image to use.
+| `RASTER_VISION_PYTORCH_GPU_IMAGE`   | The local Raster Vision PyTorch image to use.
+| `ECR_TF_CPU_IMAGE`                  | The name of the ECR TF CPU image
+| `ECR_TF_GPU_IMAGE`                  | The name of the ECR TF GPU image
+| `ECR_PYTORCH_IMAGE`                  | The name of the ECR PYTORCH image
+| `ECR_IMAGE_TAG`              | The ECR image tag to use, that is the tag in ECR_TF_CPU_IMAGE,ECR_TF_GPU_IMAGE, and ECR_PYTORCH_IMAGE |
 
-Run `make publish-container` to publish the CPU and GPU images to your ECR repositories.
+Run `make publish-images` to publish the images to your ECR repositories.
 
 ## Update Raster Vision configuration
 
