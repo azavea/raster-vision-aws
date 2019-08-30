@@ -31,8 +31,9 @@ Metadata:
       - Label:
           default: Container Image Parameters (Advanced)
         Parameters:
-          - GpuRepositoryName
-          - CpuRepositoryName
+          - TFGpuRepositoryName
+          - TFCpuRepositoryName
+          - PyTorchRepositoryName
           - ImageTag
           - GPUInstanceVCPUs
           - GPUInstanceMemory
@@ -75,10 +76,12 @@ Metadata:
         default: CPU Memory Limit
       CPUInstanceStorage:
         default: CPU Instance Storage
-      CpuRepositoryName:
-        default: Repository Name (CPU)
-      GpuRepositoryName:
-        default: Repository Name (GPU)
+      TFCpuRepositoryName:
+        default: Repository Name (Tensorflow CPU)
+      TFGpuRepositoryName:
+        default: Repository Name (Tensorflow GPU)
+      PyTorchRepositoryName:
+        default: Repository Name (PyTorch)
       ImageTag:
         default: Image Tag
       VPC:
@@ -186,21 +189,29 @@ Parameters:
     Default: 200
     Description: The amount of EBS storage (in GB) to use for the CPU instance root volume.
 
-  GpuRepositoryName:
+  TFGpuRepositoryName:
     Type: String
     Default: ""
     Description: >
       (Optional) Specifies the name of an ECR repository to create for use in
       pushing and pulling container images -- if empty, pulls the latest
-      GPU-based Raster Vision container image from Quay.io instead
+      TF GPU-based Raster Vision container image from Quay.io instead
 
-  CpuRepositoryName:
+  TFCpuRepositoryName:
     Type: String
     Default: ""
     Description: >
       (Optional) Specifies the name of an ECR repository to create for use in
       pushing and pulling CPU-enabled images -- if empty, pulls the latest
-      CPU-based Raster Vision container image from Quay.io instead
+      TF CPU-based Raster Vision container image from Quay.io instead
+
+  PyTorchRepositoryName:
+    Type: String
+    Default: ""
+    Description: >
+      (Optional) Specifies the name of an ECR repository to create for use in
+      pushing and pulling CPU-enabled images -- if empty, pulls the latest
+      PyTorch-based Raster Vision container image from Quay.io instead
 
   ImageTag:
     Type: String
@@ -220,10 +231,12 @@ Parameters:
       must exist in the VPC you selected)
 
 Conditions:
-  UseHostedGpuImage: !Equals [!Ref GpuRepositoryName, ""]
-  UseCustomGpuImage: !Not [!Equals [!Ref GpuRepositoryName, ""]]
-  UseHostedCpuImage: !Equals [!Ref CpuRepositoryName, ""]
-  UseCustomCpuImage: !Not [!Equals [!Ref CpuRepositoryName, ""]]
+  UseHostedTFGpuImage: !Equals [!Ref TFGpuRepositoryName, ""]
+  UseCustomTFGpuImage: !Not [!Equals [!Ref TFGpuRepositoryName, ""]]
+  UseHostedTFCpuImage: !Equals [!Ref TFCpuRepositoryName, ""]
+  UseCustomTFCpuImage: !Not [!Equals [!Ref TFCpuRepositoryName, ""]]
+  UseHostedPyTorchImage: !Equals [!Ref PyTorchRepositoryName, ""]
+  UseCustomPyTorchImage: !Not [!Equals [!Ref PyTorchRepositoryName, ""]]
 
 Resources:
   BatchServiceIAMRole:
@@ -309,17 +322,23 @@ Resources:
         - Key: Name
           Value: !Join ["", [!Ref Prefix, "RasterVisionSecurityGroup"]]
 
-  GpuRepository:
+  TFGpuRepository:
     Type: AWS::ECR::Repository
-    Condition: UseCustomGpuImage
+    Condition: UseCustomTFGpuImage
     Properties:
-      RepositoryName: !Ref GpuRepositoryName
+      RepositoryName: !Ref TFGpuRepositoryName
 
-  CpuRepository:
+  TFCpuRepository:
     Type: AWS::ECR::Repository
-    Condition: UseCustomCpuImage
+    Condition: UseCustomTFCpuImage
     Properties:
-      RepositoryName: !Ref CpuRepositoryName
+      RepositoryName: !Ref TFCpuRepositoryName
+
+  PyTorchRepository:
+    Type: AWS::ECR::Repository
+    Condition: UseCustomPyTorchImage
+    Properties:
+      RepositoryName: !Ref PyTorchRepositoryName
 
   GpuLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -419,90 +438,170 @@ Resources:
         - ComputeEnvironment: !Ref CpuComputeEnvironment
           Order: 1
 
-  CustomGpuJobDefinition:
+  CustomTFGpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseCustomGpuImage
+    Condition: UseCustomTFGpuImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionCustomGpuJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionCustomTFGpuJobDefinition"]]
       ContainerProperties:
-        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GpuRepositoryName}:${ImageTag}"
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${TFGpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref GPUInstanceVCPUs
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
               SourcePath: /home/ec2-user
             Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
         MountPoints:
           - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedGpuJobDefinition:
+  HostedTFGpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseHostedGpuImage
+    Condition: UseHostedTFGpuImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionHostedGpuJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionHostedTFGpuJobDefinition"]]
       ContainerProperties:
-        Image: quay.io/azavea/raster-vision:gpu-latest
+        Image: quay.io/azavea/raster-vision:tf-gpu-latest
         Vcpus: !Ref GPUInstanceVCPUs
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
               SourcePath: /home/ec2-user
             Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
         MountPoints:
           - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  CustomCpuJobDefinition:
+  CustomTFCpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseCustomCpuImage
+    Condition: UseCustomTFCpuImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionCustomCpuJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionCustomTFCpuJobDefinition"]]
       ContainerProperties:
-        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CpuRepositoryName}:${ImageTag}"
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${TFCpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref CPUInstanceVCPUs
         Memory: !Ref CPUInstanceMemory
         Volumes:
           - Host:
               SourcePath: /home/ec2-user
             Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
         MountPoints:
           - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedCpuJobDefinition:
+  HostedTFCpuJobDefinition:
     Type: AWS::Batch::JobDefinition
-    Condition: UseHostedCpuImage
+    Condition: UseHostedTFCpuImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionHostedCpuJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionHostedTFCpuJobDefinition"]]
       ContainerProperties:
-        Image: quay.io/azavea/raster-vision:cpu-latest
+        Image: quay.io/azavea/raster-vision:tf-cpu-latest
         Vcpus: !Ref CPUInstanceVCPUs
         Memory: !Ref CPUInstanceMemory
         Volumes:
           - Host:
               SourcePath: /home/ec2-user
             Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
         MountPoints:
           - ContainerPath: /opt/data
             ReadOnly: false
             SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  CustomPyTorchJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseCustomPyTorchImage
+    Properties:
+      Type: Container
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchJobDefinition"]]
+      ContainerProperties:
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PyTorchRepositoryName}:${ImageTag}"
+        Vcpus: !Ref CPUInstanceVCPUs
+        Memory: !Ref CPUInstanceMemory
+        Volumes:
+          - Host:
+              SourcePath: /home/ec2-user
+            Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
+        MountPoints:
+          - ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  HostedPyTorchJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseHostedPyTorchImage
+    Properties:
+      Type: Container
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchJobDefinition"]]
+      ContainerProperties:
+        Image: quay.io/azavea/raster-vision:pytorch-latest
+        Vcpus: !Ref CPUInstanceVCPUs
+        Memory: !Ref CPUInstanceMemory
+        Volumes:
+          - Host:
+              SourcePath: /home/ec2-user
+            Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
+        MountPoints:
+          - ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
         ReadonlyRootFilesystem: false
         Privileged: true
