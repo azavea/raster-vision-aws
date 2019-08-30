@@ -124,7 +124,7 @@ Parameters:
 
   DesiredVCPUs:
     Type: Number
-    Default: 2
+    Default: 0
     Description: The desired number of EC2 vCPUS in the compute environment
 
   MaximumVCPUs:
