@@ -124,7 +124,7 @@ Parameters:
 
   DesiredVCPUs:
     Type: Number
-    Default: 2
+    Default: 0
     Description: The desired number of EC2 vCPUS in the compute environment
 
   MaximumVCPUs:
@@ -144,31 +144,31 @@ Parameters:
 
   GpuInstanceTypes:
     Type: List<String>
-    Default: p2.xlarge
+    Default: p3.2xlarge
     Description: >
       A comma-separated list of instance types that may be launched with the
       GPU-enabled AMI
 
   CpuInstanceTypes:
     Type: List<String>
-    Default: c4.xlarge
+    Default: r5.large
     Description: >
       A comma-separated list of instance types that may be launched with the
       CPU-enabled AMI
 
   GPUInstanceVCPUs:
     Type: Number
-    Default: 4
-    Description: Number of vCPUs reserved for the container by the task definition for GPU instances (8 should be used for P3 instances)
+    Default: 8
+    Description: Number of vCPUs reserved for the container by the task definition for GPU instances (4 should be used for P2 instances)
 
   GPUInstanceMemory:
     Type: Number
-    Default: 40000
-    Description: The hard limit (in MB) of memory to present to the container for GPU instances (55000 should be used for P3 instances)
+    Default: 55000
+    Description: The hard limit (in MB) of memory to present to the container for GPU instances (40000 should be used for P2 instances)
 
   GPUInstanceStorage:
     Type: Number
-    Default: 64
+    Default: 200
     Description: The amount of EBS storage (in GB) to use for the GPU instance root volume.
 
   CPUInstanceVCPUs:
@@ -178,12 +178,12 @@ Parameters:
 
   CPUInstanceMemory:
     Type: Number
-    Default: 1250
+    Default: 6000
     Description: The hard limit (in MB) of memory to present to the container for CPU instances
 
   CPUInstanceStorage:
     Type: Number
-    Default: 64
+    Default: 200
     Description: The amount of EBS storage (in GB) to use for the CPU instance root volume.
 
   GpuRepositoryName:
