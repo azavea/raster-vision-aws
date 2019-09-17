@@ -550,13 +550,13 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  CustomPyTorchJobDefinition:
+  CustomPyTorchCPUJobDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseCustomPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchCPUJobDefinition"]]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PyTorchRepositoryName}:${ImageTag}"
         Vcpus: !Ref CPUInstanceVCPUs
@@ -578,17 +578,73 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedPyTorchJobDefinition:
+  HostedPyTorchJobCPUDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseHostedPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchCPUJobDefinition"]]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:pytorch-latest
         Vcpus: !Ref CPUInstanceVCPUs
         Memory: !Ref CPUInstanceMemory
+        Volumes:
+          - Host:
+              SourcePath: /home/ec2-user
+            Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
+        MountPoints:
+          - ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  CustomPyTorchGPUJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseCustomPyTorchImage
+    Properties:
+      Type: Container
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchGPUJobDefinition"]]
+      ContainerProperties:
+        Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PyTorchRepositoryName}:${ImageTag}"
+        Vcpus: !Ref GPUInstanceVCPUs
+        Memory: !Ref GPUInstanceMemory
+        Volumes:
+          - Host:
+              SourcePath: /home/ec2-user
+            Name: home
+          - Host:
+              SourcePath: /dev/shm
+            Name: shm
+        MountPoints:
+          - ContainerPath: /opt/data
+            ReadOnly: false
+            SourceVolume: home
+          - ContainerPath: /dev/shm
+            ReadOnly: false
+            SourceVolume: shm
+        ReadonlyRootFilesystem: false
+        Privileged: true
+
+  HostedPyTorchJobGPUDefinition:
+    Type: AWS::Batch::JobDefinition
+    Condition: UseHostedPyTorchImage
+    Properties:
+      Type: Container
+      JobDefinitionName:
+        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchGPUJobDefinition"]]
+      ContainerProperties:
+        Image: quay.io/azavea/raster-vision:pytorch-latest
+        Vcpus: !Ref GPUInstanceVCPUs
+        Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
               SourcePath: /home/ec2-user
