@@ -13,8 +13,6 @@ Metadata:
           - VPC
           - SubnetIds
           - KeyName
-          - GpuAMI
-          - CpuAMI
       - Label:
           default: Instance Types (Advanced)
         Parameters:
@@ -44,10 +42,6 @@ Metadata:
     ParameterLabels:
       Prefix:
         default: Prefix
-      GpuAMI:
-        default: AMI (GPU)
-      CpuAMI:
-        default: AMI (CPU)
       KeyName:
         default: SSH Key Name
       SpotFleetBidPercentage:
@@ -101,14 +95,6 @@ Parameters:
     AllowedPattern: ^[a-z0-9]*$
     ConstraintDescription: must only contain lowercase letters and numbers
 
-  GpuAMI:
-    Type: AWS::EC2::Image::Id
-    Description: Amazon Machine Image to use for the GPU-enabled compute environment
-
-  CpuAMI:
-    Type: AWS::EC2::Image::Id
-    Description: Amazon Machine Image to use for the CPU-enabled compute environment
-
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: An Amazon EC2 key pair name to use for SSH access to the cluster
@@ -149,15 +135,13 @@ Parameters:
     Type: List<String>
     Default: p3.2xlarge
     Description: >
-      A comma-separated list of instance types that may be launched with the
-      GPU-enabled AMI
+      A comma-separated list of GPU-enabled instance types
 
   CpuInstanceTypes:
     Type: List<String>
     Default: r5.large
     Description: >
-      A comma-separated list of instance types that may be launched with the
-      CPU-enabled AMI
+      A comma-separated list of CPU-enabled instance types
 
   GPUInstanceVCPUs:
     Type: Number
@@ -363,7 +347,6 @@ Resources:
         Type: SPOT
         BidPercentage: !Ref SpotFleetBidPercentage
         Ec2KeyPair: !Ref KeyName
-        ImageId: !Ref GpuAMI
         MinvCpus: !Ref MinimumVCPUs
         DesiredvCpus: !Ref DesiredVCPUs
         MaxvCpus: !Ref MaximumVCPUs
@@ -402,7 +385,6 @@ Resources:
         Type: SPOT
         BidPercentage: !Ref SpotFleetBidPercentage
         Ec2KeyPair: !Ref KeyName
-        ImageId: !Ref CpuAMI
         MinvCpus: !Ref MinimumVCPUs
         DesiredvCpus: !Ref DesiredVCPUs
         MaxvCpus: !Ref MaximumVCPUs
@@ -448,6 +430,9 @@ Resources:
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${TFGpuRepositoryName}:${ImageTag}"
         Vcpus: !Ref GPUInstanceVCPUs
+        ResourceRequirements:
+          - Type: "GPU"
+            Value: "1"
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
@@ -476,6 +461,9 @@ Resources:
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:tf-gpu-latest
         Vcpus: !Ref GPUInstanceVCPUs
+        ResourceRequirements:
+          - Type: "GPU"
+            Value: "1"
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
@@ -550,13 +538,13 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  CustomPyTorchCPUJobDefinition:
+  CustomPyTorchCpuJobDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseCustomPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchCPUJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchCpuJobDefinition"]]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PyTorchRepositoryName}:${ImageTag}"
         Vcpus: !Ref CPUInstanceVCPUs
@@ -578,13 +566,13 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedPyTorchJobCPUDefinition:
+  HostedPyTorchJobCpuDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseHostedPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchCPUJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchCpuJobDefinition"]]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:pytorch-latest
         Vcpus: !Ref CPUInstanceVCPUs
@@ -606,16 +594,19 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  CustomPyTorchGPUJobDefinition:
+  CustomPyTorchGpuJobDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseCustomPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchGPUJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionCustomPyTorchGpuJobDefinition"]]
       ContainerProperties:
         Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${PyTorchRepositoryName}:${ImageTag}"
         Vcpus: !Ref GPUInstanceVCPUs
+        ResourceRequirements:
+          - Type: "GPU"
+            Value: "1"
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
@@ -634,16 +625,19 @@ Resources:
         ReadonlyRootFilesystem: false
         Privileged: true
 
-  HostedPyTorchJobGPUDefinition:
+  HostedPyTorchJobGpuDefinition:
     Type: AWS::Batch::JobDefinition
     Condition: UseHostedPyTorchImage
     Properties:
       Type: Container
       JobDefinitionName:
-        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchGPUJobDefinition"]]
+        !Join ["", [!Ref Prefix, "RasterVisionHostedPyTorchGpuJobDefinition"]]
       ContainerProperties:
         Image: quay.io/azavea/raster-vision:pytorch-latest
         Vcpus: !Ref GPUInstanceVCPUs
+        ResourceRequirements:
+          - Type: "GPU"
+            Value: "1"
         Memory: !Ref GPUInstanceMemory
         Volumes:
           - Host:
