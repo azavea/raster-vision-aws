@@ -1,11 +1,8 @@
-# Settings for create-ami. These should be filled in before running create-ami.
-AWS_BATCH_BASE_AMI := ami-XXXXXXXX
-AWS_ROOT_BLOCK_DEVICE_SIZE := 50
-AWS_REGION := us-east-1
-AWS_PROFILE := raster-vision
-
 # Settings for publish-image. These should be filled in after running the
 # Cloudformation setup (with the ECR fields set) and before running publish-image.
+
+AWS_REGION := us-east-1
+
 RASTER_VISION_TF_CPU_IMAGE := raster-vision-tf-cpu
 RASTER_VISION_TF_GPU_IMAGE := raster-vision-tf-gpu
 RASTER_VISION_PYTORCH_IMAGE := raster-vision-pytorch
