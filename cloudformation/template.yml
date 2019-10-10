@@ -194,7 +194,7 @@ Parameters:
     Default: ""
     Description: >
       (Optional) Specifies the name of an ECR repository to create for use in
-      pushing and pulling CPU-enabled images -- if empty, pulls the latest
+      pushing and pulling images -- if empty, pulls the latest
       PyTorch-based Raster Vision container image from Quay.io instead
 
   ImageTag:
