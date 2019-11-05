@@ -139,7 +139,7 @@ Parameters:
 
   CpuInstanceTypes:
     Type: List<String>
-    Default: r5.large
+    Default: r5
     Description: >
       A comma-separated list of CPU-enabled instance types
 
