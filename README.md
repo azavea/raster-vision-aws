@@ -15,6 +15,7 @@ Using Batch is advantageous because it starts and stops instances automatically 
 * [AWS Credentials](#aws-credentials)
 * [Deploying Batch resources](#deploying-batch-resources)
 * [Update Raster Vision configuration](#update-raster-vision-configuration)
+* [Deploy new job definitions](#deploy-new-job-definitions)
 
 ## AWS Account Setup ##
 
@@ -79,3 +80,7 @@ Run `make publish-images` to publish the images to your ECR repositories.
 ## Update Raster Vision configuration
 
 Finally, make sure to update your [Raster Vision configuration](https://docs.rastervision.io/en/latest/setup.html#setting-up-aws-batch) with the Batch resources that were created.
+
+## Deploy new job definitions
+
+When a user starts working on a new RV-based project (or a new user starts working on an existing RV-based project), they will often want to publish a custom Docker image to ECR and use it when running on Batch. To facilitate this, there is a separate [CloudFormation template for creating new job definitions](cloudformation/job_def_template.yml). The idea is that for each user/project pair which is identified by a `Namespace` string, a CPU and GPU job definition is created which point to a specified ECR repo using that `Namespace` as the tag. After creating these new resources, the image should be published to `repo:namespace` on ECR, and the new job definitions should be placed in a project-specific [RV profile file](https://docs.rastervision.io/en/latest/setup.html#setting-up-aws-batch).
