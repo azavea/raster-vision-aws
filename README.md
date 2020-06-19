@@ -4,6 +4,7 @@ This repository contains the deployment code that sets up the necessary AWS reso
 
 Note: The `master` branch of this repo should be used in conjunction with the `master` branch (or `latest` Docker image tag) of [Raster Vision](https://github.com/azavea/raster-vision)
 which contains the latest changes. For versions of this repo that correspond to stable, released versions of Raster Vision, see:
+* [0.11](https://github.com/azavea/raster-vision-aws/tree/0.11)
 * [0.10](https://github.com/azavea/raster-vision-aws/tree/0.10)
 * [0.9](https://github.com/azavea/raster-vision-aws/tree/0.9)
 
